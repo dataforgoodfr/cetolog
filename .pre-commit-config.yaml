@@ -10,3 +10,20 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: mixed-line-ending
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: check-added-large-files
+        args: [--maxkb=5000]
+  - repo: local
+    hooks:
+      - id: forbid-env-files
+        name: refuser les fichiers .env
+        language: fail
+        entry: "Fichier .env interdit dans Git : il contient les accès au bucket."
+        files: '(^|/)\.env(\.(?!example$)[^/]+)?$'
+      - id: forbid-project-data
+        name: refuser les données du projet
+        language: fail
+        entry: "Données interdites dans Git : elles restent dans data/ ou sur le bucket."
+        files: '(^data/|\.(zip|npy|csv|xlsx)$)'

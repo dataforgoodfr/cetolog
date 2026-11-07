@@ -9,18 +9,21 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-# TODO: repenser la structure du S3 : données prêtes pour le ML, réindexation, identifiées et à identifier
-
 # CONSTANTES
 REQUIRED_VARIABLES = (
     "S3_ENDPOINT_URL", "S3_REGION", 
     "S3_BUCKET", "AWS_ACCESS_KEY_ID", 
     "AWS_SECRET_ACCESS_KEY"
 )
-DATA = Path("data")  # réplique locale du bucket : mêmes dossiers, mêmes chemins
+DATA = Path("data")
+PUSHED = (
+    "curated/catalogue/photos", "curated/catalogue/manifests",
+    "curated/best_of/photos", "curated/best_of/manifests",
+    "derived/embeddings", "derived/propositions",
+)
 
 
-# Récupération des variables d'environnements -> .env TODO: penser à demander les credentials
+# Les accès au bucket, lus dans .env
 def load_env(path: str | Path = ".env") -> None:
     path = Path(path)
     if not path.exists():
@@ -39,7 +42,7 @@ def connect() -> Bucket:
     if missing:
         raise RuntimeError(f"Variables manquantes : {', '.join(missing)}")
     
-    # Par défaut, boto3 envoie sans Content-Length, avec une somme de contrôle en fin de flux : Cellar refuse.
+    # Cellar refuse les sommes de contrôle par défaut de boto3
     config = Config(
         request_checksum_calculation="when_required", 
         response_checksum_validation="when_required"
@@ -60,16 +63,13 @@ class Bucket:
         self.name = name
 
     def check(self) -> None:
-        """Vérifie que les accès ouvrent bien le bucket : une erreur S3 est levée sinon."""
         self.client.head_bucket(Bucket=self.name)
 
     def list_keys(self, prefix: str) -> list[str]:
-        """Les fichiers sous ce préfixe, sans les objets vides qui font exister les dossiers."""
         pages = self.client.get_paginator("list_objects_v2").paginate(Bucket=self.name, Prefix=prefix)
         return [item["Key"] for page in pages for item in page.get("Contents", []) if not item["Key"].endswith("/")]
 
     def head(self, key: str) -> dict | None:
-        """Les informations d'un fichier, ou None s'il n'existe pas. Toute autre erreur S3 est levée."""
         try:
             return self.client.head_object(Bucket=self.name, Key=key)
         except ClientError as error:
@@ -91,29 +91,32 @@ class Bucket:
                 Metadata=metadata or {},
             )
 
-    def pull(self, data: Path = DATA) -> None:
-        """Copie raw/ du bucket vers data/raw/, en sautant ce qui est déjà là."""
-        received = 0
-        for key in self.list_keys("raw/"):
-            path = data / key
-            if path.exists():
-                continue
-
-            # Fichier temporaire : un téléchargement coupé ne passe pas pour un fichier complet
+    def fetch(self, path: str | Path, data: Path = DATA) -> Path:
+        """Télécharge le fichier s'il manque."""
+        path = Path(path)
+        if not path.exists():
+            # .part : un téléchargement coupé ne passe pas pour complet
             path.parent.mkdir(parents=True, exist_ok=True)
             partial = path.with_name(path.name + ".part")
-            print(f"téléchargement : {key}", flush=True)
-            self.download(key, partial)
+            self.download(path.relative_to(data).as_posix(), partial)
             partial.rename(path)
-            received += 1
+        return path
 
-        print(f"{received} fichiers récupérés dans {data / 'raw'}")
+    def pull(self, data: Path = DATA, prefix: str = "raw/") -> None:
+        received = 0
+        for key in self.list_keys(prefix):
+            if not (data / key).exists():
+                print(f"téléchargement : {key}", flush=True)
+                self.fetch(data / key, data)
+                received += 1
+
+        print(f"{received} fichiers récupérés dans {data / prefix}")
 
     def push(self, data: Path = DATA) -> None:
-        """Envoie data/curated/ vers le bucket : les photos d'abord, les manifestes en dernier. raw/ n'est jamais touché."""
+        """Envoie PUSHED sans écraser. raw/ n'est jamais touché."""
         sent = 0
-        for folder in ("photos", "manifests"):
-            for path in sorted((data / "curated" / folder).rglob("*")):
+        for folder in PUSHED:
+            for path in sorted((data / folder).rglob("*")):
                 key = path.relative_to(data).as_posix()
                 if path.is_file() and not path.name.startswith(".") and self.head(key) is None:
                     self.upload(path, key)

@@ -5,13 +5,33 @@ requires-python = ">=3.12"
 dependencies = []
 
 [dependency-groups]
+demo = [
+    "gradio>=5",
+    "scikit-learn>=1.5",
+]
 dev = [
     "moto[s3]>=5.2.5",
+    "numpy>=2.0",
     "pytest>=9.2.0",
+    "scikit-learn>=1.5",
+]
+ml = [
+    "huggingface-hub>=0.30",
+    "numpy>=2.0",
+    "safetensors>=0.4",
+    "scikit-learn>=1.5",
+    "timm>=1.0.20",
+    "torch>=2.6",
+    "torchvision>=0.21",
+]
+notebook = [
+    "ipykernel>=6.29",
+    "matplotlib>=3.9",
+    "nbconvert>=7.16",
 ]
 pipeline = [
     "boto3>=1.43.123",
-    "pillow>=13.0.0",
+    "pillow>=11.0.0",
 ]
 
 [tool.uv]

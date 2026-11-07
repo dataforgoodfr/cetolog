@@ -1,25 +1,6 @@
 # pipeline
 
-Récupère les livraisons de photos, les transforme en données prêtes pour le ML, puis les publie sur le bucket.
-
-## La logique
-
-**`data/` est la réplique locale du bucket S3 :** mêmes dossiers, mêmes chemins. Ce dossier n'est jamais commité.
-
-On travaille toujours en local d'abord, et on publie seulement quand le résultat est bon :
-
-```text
-S3  →  pull  →  data/raw/  →  run.py  →  data/curated/  →  push  →  S3
-```
-
-```text
-data/
-├── raw/
-│   └── photos/<livraison>_photos.zip
-└── curated/
-    ├── photos/<livraison>/<dauphin>/...
-    └── manifests/<livraison>.csv
-```
+Les commandes de la pipeline. Ce qu'elle fait, comment et ce qui reste sont dans [docs/cetolog_pipeline](../docs/cetolog_pipeline/README.md).
 
 ## Avant de commencer
 
@@ -27,47 +8,50 @@ Installe le projet et crée ton `.env` avec le [README principal](../README.md).
 
 ## Lancer
 
-**1. Vérifier la connexion au bucket**
+Deux commandes, et `storage` pour le bucket :
 
-```bash
-uv run python -m pipeline.storage check
-```
+| Commande | Quand | Ce qu'elle fait |
+|---|---|---|
+| `pipeline.bootstrap` | **Dormant** : une fois, puis à chaque nouvelle version du catalogue | Construit la référence : le catalogue et ses empreintes |
+| `pipeline.run` | **À chaque best-of** livré par Miraceti | Le best-of, ses empreintes et ses propositions : les 10 dauphins du catalogue les plus ressemblants pour chaque individu |
 
-**2. Récupérer les données**
+**1. Récupérer les données** : copie `raw/` du bucket dans `data/raw/`, en sautant ce qui est déjà là.
 
 ```bash
 uv run python -m pipeline.storage pull
 ```
 
-`pull` copie `raw/` du bucket vers `data/raw/`, en sautant ce qui est déjà là.
+Sans accès au bucket, copie les zips dans `data/raw/catalogue/` et `data/raw/best_of/`, nommés `AAAA-MM-JJ_<nom>.zip`.
 
-Sans accès au bucket, copie le zip dans `data/raw/photos/`. Il doit être nommé `AAAA-MM-JJ_source_photos.zip`, avec un dossier par dauphin.
-
-**3. Construire les données**
+**2. Construire le catalogue**, une seule fois :
 
 ```bash
-uv run python -m pipeline.photos.run
+uv run --group ml python -m pipeline.bootstrap
 ```
 
-Le script dézippe le zip, construit le manifeste et remplit `data/curated/`. Aucune clé n'est nécessaire pour cette étape, et une livraison déjà traitée est sautée.
+**3. Traiter les best-of** :
 
-**4. Regarder le résultat dans `data/curated/`**
+```bash
+uv run --group ml python -m pipeline.run
+```
 
-**5. Envoyer sur le bucket**
+Résultat : `data/derived/propositions/<best_of>.csv`, une ligne par candidat (`individu`, `rang`, `candidat`, `score`, `cosinus_D`, `cosinus_G`). Le premier lancement télécharge les poids de CetaceaNet. Tout ce qui est déjà fait est sauté : on peut relancer sans risque.
+
+**4. Envoyer dans le bucket** : `curated/` puis `derived/`, sans rien écraser et sans toucher à `raw/`.
 
 ```bash
 uv run python -m pipeline.storage push
 ```
 
-`push` envoie uniquement `data/curated/`, sans jamais toucher à `raw/`. Ce qui existe déjà dans le bucket n'est pas écrasé.
-
 ## Les fichiers
 
 | Fichier | Rôle |
 |---|---|
-| `photos/manifest.py` | Décrire chaque photo et noter les anomalies |
-| `photos/run.py` | Du zip à `data/curated/`, en local |
+| `bootstrap.py` | Dormant : le catalogue, du zip aux empreintes |
+| `run.py` | Le quotidien : un best-of, du zip aux propositions |
 | `storage.py` | Se connecter au bucket, `pull` et `push` |
-
-Le contenu du bucket est décrit dans [`docs/s3_bucket.md`](../docs/s3_bucket.md).
-
+| `photos/manifest.py` | Les outils communs : du zip à `data/curated/`, manifeste et anomalies |
+| `photos/catalogue.py` | Lire les noms du catalogue : `DD_TUTR0001_…` |
+| `photos/best_of.py` | Lire les noms d'un best-of : `IND3/D_3_20230307_…` |
+| `embeddings.py` | Les empreintes d'un type de livraison |
+| `propositions.py` | Pour chaque individu d'un best-of, les dauphins du catalogue les plus ressemblants |

@@ -172,3 +172,5 @@ data/
 !docs/assets/*.png
 .ruff_cache/
 
+# Deploy clevercloud
+.clever.json

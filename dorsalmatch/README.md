@@ -47,7 +47,7 @@ Les deux pièges de CetaceaNet, réglés dans [`models/cetaceanet.py`](models/ce
 
 ## Résultats
 
-Les résultats sont dans [le notebook](../notebooks/metriques_catalogue.ipynb) : c'est la mesure de référence pour comparer les modèles. Il cherche chaque photo de l'historique dans le catalogue, avec la même fonction que la pipeline, et met de côté les photos que le catalogue a reprises.
+Les résultats sont dans [le notebook](../notebooks/baseline_ml.ipynb) : c'est la mesure de référence pour comparer les modèles. Il cherche chaque photo de l'historique dans le catalogue, avec le même classement que la démo, et met de côté les photos que le catalogue a reprises.
 
 Les photos sont utilisées telles quelles, sans recadrage automatique : elles sont déjà cadrées par Miraceti.
 

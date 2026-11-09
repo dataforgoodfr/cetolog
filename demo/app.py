@@ -11,7 +11,7 @@ os.environ["GRADIO_TEMP_DIR"] = WORKSPACE.name
 import gradio as gr  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from pipeline.propositions import catalogue_photos, latest, load, propose  # noqa: E402
+from demo.propositions import catalogue_photos, latest, load, propose  # noqa: E402
 from pipeline.storage import connect  # noqa: E402
 
 # Tout vient du bucket : les empreintes au démarrage, chaque photo à l'affichage
@@ -21,7 +21,7 @@ for kind in ("catalogue", "best_of"):
     BUCKET.pull(CACHE, prefix=f"derived/embeddings/{kind}/")
     if not (CACHE / "derived" / "embeddings" / kind).exists():
         raise SystemExit(f"Le bucket {BUCKET.name} n'a pas d'empreintes pour {kind} (derived/embeddings/{kind}/) : "
-                         "lancer la pipeline (bootstrap, run) puis python -m pipeline.storage push")
+                         "les y déposer avant de relancer la démo")
 
 
 def fetch(path: str) -> str:

@@ -267,11 +267,13 @@ source = { virtual = "." }
 [package.dev-dependencies]
 demo = [
     { name = "gradio" },
+    { name = "pandas" },
     { name = "scikit-learn" },
 ]
 dev = [
     { name = "moto", extra = ["s3"] },
     { name = "numpy" },
+    { name = "pandas" },
     { name = "pytest" },
     { name = "scikit-learn" },
 ]
@@ -299,11 +301,13 @@ pipeline = [
 [package.metadata.requires-dev]
 demo = [
     { name = "gradio", specifier = ">=5" },
+    { name = "pandas", specifier = ">=2" },
     { name = "scikit-learn", specifier = ">=1.5" },
 ]
 dev = [
     { name = "moto", extras = ["s3"], specifier = ">=5.2.5" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "pandas", specifier = ">=2" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "scikit-learn", specifier = ">=1.5" },
 ]

@@ -8,17 +8,9 @@ uv sync --group ml
 
 PyTorch, dans le groupe `ml`, ne sert qu'à calculer les empreintes. Chercher et mesurer n'ont besoin que de numpy et scikit-learn.
 
-## Avec la pipeline
+## Récupérer les empreintes
 
-Les empreintes du catalogue et des best-of sont calculées par la pipeline (voir [lancer la pipeline](../cetolog_pipeline/lancer.md)) :
-
-```bash
-uv run --group ml python -m pipeline.bootstrap
-```
-
-```bash
-uv run --group ml python -m pipeline.run
-```
+Les empreintes de référence du catalogue, de l'historique et des best-of sont dans le bucket : [le notebook de livraison](../../notebooks/data_livraison.ipynb) les télécharge.
 
 ## En Python
 
@@ -50,7 +42,7 @@ for index, cosine in dorsalmatch.search(query, catalogue, k=10)[0]:
 
 ## Mesurer
 
-[Le notebook](../../notebooks/metriques_catalogue.ipynb) reconstruit l'historique à partir du catalogue et note la reconstruction grâce aux annotations : bon dauphin au rang 1, dans le top 10 mais plus bas, ou hors du top 10. C'est le point de départ pour comparer un autre modèle.
+[Le notebook](../../notebooks/baseline_ml.ipynb) reconstruit l'historique à partir du catalogue et note la reconstruction grâce aux annotations : bon dauphin au rang 1, dans le top 10 mais plus bas, ou hors du top 10. C'est le point de départ pour comparer un autre modèle.
 
 ## Tester
 

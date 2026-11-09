@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import csv
 import re
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 import dorsalmatch
 
@@ -21,11 +21,11 @@ NEAR_IDENTICAL = 0.97
 # Les photos d'une livraison et leurs empreintes
 def load(kind: str, delivery: str, data: Path = DATA) -> tuple[list[dict], np.ndarray]:
     folder = data / "derived" / "embeddings" / kind / delivery
-    with open(folder / "photos.csv", encoding="utf-8") as file:
-        photos = list(csv.DictReader(file))
-    for photo in photos:
-        photo["chemin"] = str(data / "curated" / kind / "photos" / delivery / photo["individu"] / photo["fichier_origine"])
-    return photos, np.load(folder / f"{MODEL}.npy")
+    # keep_default_na=False : un côté vide reste "", pas NaN
+    photos = pd.read_csv(folder / "photos.csv", dtype=str, keep_default_na=False)
+    photos["chemin"] = [str(data / "curated" / kind / "photos" / delivery / individual / name)
+                        for individual, name in zip(photos["individu"], photos["fichier_origine"])]
+    return photos.to_dict("records"), np.load(folder / f"{MODEL}.npy")
 
 
 # La dernière livraison d'un type
@@ -109,8 +109,5 @@ def write(best_of: str, catalogue_delivery: str, data: Path = DATA) -> Path:
 
     output = data / "derived" / "propositions" / f"{best_of}.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
+    pd.DataFrame(rows, columns=COLUMNS).to_csv(output, index=False, encoding="utf-8")
     return output

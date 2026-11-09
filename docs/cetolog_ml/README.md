@@ -12,7 +12,7 @@ Le schéma se modifie avec [dorsalmatch.excalidraw](../assets/dorsalmatch.excali
 2. **[L'utiliser](utiliser.md)** : calculer des empreintes, chercher, mesurer.
 3. **[Le faire évoluer](a_tester.md)** : les modèles et les étapes à tester.
 
-Les résultats chiffrés sont dans [le notebook](../../notebooks/metriques_catalogue.ipynb). Ses exemples en photos n'apparaissent qu'une fois relancé en local.
+Les résultats chiffrés sont dans [le notebook](../../notebooks/baseline_ml.ipynb). Ses exemples en photos n'apparaissent qu'une fois relancé en local.
 
 ## Les notions à retenir
 

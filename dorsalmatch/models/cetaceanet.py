@@ -5,11 +5,11 @@ import torch
 from huggingface_hub import hf_hub_download
 from torch import nn
 
-from dorsalmatch.models.common import INCEPTION, GeM, preprocessing
+from dorsalmatch.models.common import IMAGENET, GeM, preprocessing
 
 # CONSTANTES
 WEIGHTS = ("Saving-Willy/cetacean-classifier", "last.ckpt")  # model.safetensors : neck non entraîné
-PREPROCESSING = preprocessing(768, *INCEPTION)
+PREPROCESSING = preprocessing(768, *IMAGENET) # Process l'image en fonction des images d'entraînement
 
 
 # EfficientNetV2-M de Happywhale ; noms des attributs = ceux du checkpoint

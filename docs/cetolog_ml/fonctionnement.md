@@ -14,11 +14,11 @@ Les étapes du [schéma](../assets/dorsalmatch.png), et où elles sont dans le c
 
 **1. La photo.** Déjà recadrée par Miraceti. Le modèle ne reçoit que l'image : ni le nom du dauphin, ni la date.
 
-**2. Le prétraitement.** La photo est mise en carré de 768 × 768, sans recadrage, et ses couleurs passent de 0-255 à -1..1. Attention : CetaceaNet attend une moyenne et un écart-type de 0,5, pas les valeurs ImageNet.
+**2. Le prétraitement.** La photo est mise en carré de 768 × 768, sans recadrage, et ses couleurs sont normalisées avec les valeurs ImageNet, celles du code d'entraînement. Attention : pas avec une moyenne et un écart-type de 0,5.
 
 **3. Le modèle.** CetaceaNet, un EfficientNetV2-M issu de la solution gagnante de Kaggle Happywhale, utilisé tel quel. Attention : les bons poids sont dans `last.ckpt`, pas dans `model.safetensors`.
 
-**4. L'empreinte.** 688 nombres, ramenés à une norme de 1 dans [`embedder.py`](../../dorsalmatch/embedder.py). Elles sont rangées dans `data/derived/embeddings/<jeu>/<livraison>/cetaceanet.npy`, avec `photos.csv` : ligne N = photo N.
+**4. L'empreinte.** 688 nombres, ramenés à une norme de 1 dans [`embedder.py`](../../dorsalmatch/embedder.py) : c'est la moyenne de l'empreinte de la photo et de celle de son miroir. Elles sont rangées dans `data/derived/embeddings/<jeu>/<livraison>/cetaceanet_v2.npy`, avec `photos.csv` : ligne N = photo N.
 
 ## B. Comparer : quelles empreintes se ressemblent ?
 
@@ -30,8 +30,16 @@ Les étapes du [schéma](../assets/dorsalmatch.png), et où elles sont dans le c
 
 ## C. Résultat : ce que le ML renvoie
 
-**8. Le top 10.** Pour chaque individu d'un best-of, [`propositions.py`](../../demo/propositions.py) compare ses droites aux droites du catalogue et ses gauches aux gauches, garde le meilleur cosinus par dauphin, puis fait la moyenne des côtés en commun. Il écrit les 10 meilleurs dans `data/derived/propositions/<best_of>.csv`.
+**8. Le top 10.** Pour chaque individu d'un best-of, [`propositions.py`](../../demo/propositions.py) compare toutes ses photos, droites et gauches, à toutes les photos du catalogue et garde le meilleur cosinus par dauphin. Il écrit les 10 meilleurs dans `data/derived/propositions/<best_of>.csv`.
 
 C'est l'index, pas le modèle, qui donne le nom du dauphin.
 
 Ce que ça donne sur nos données : [le notebook](../../notebooks/baseline_ml.ipynb).
+
+## Pourquoi ces choix
+
+**La normalisation ImageNet.** C'est celle du code d'entraînement de la solution gagnante de Happywhale. Le 0,5 est seulement le réglage par défaut de timm pour les modèles `tf_`.
+
+**Les deux côtés, sans miroir.** Le modèle reconnaît un dauphin d'un côté à l'autre : une gauche se cherche directement dans les droites. Les 612 dauphins qui n'ont qu'un côté au catalogue restent ainsi trouvables.
+
+**Des empreintes calculées de la même façon.** Une empreinte n'est comparable qu'à des empreintes issues du même prétraitement. Si on le change, on recalcule les trois jeux sous un nouveau nom de fichier : `storage push` n'écrase jamais, et l'ancien fichier permet de revenir en arrière.

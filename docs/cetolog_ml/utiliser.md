@@ -22,7 +22,7 @@ import dorsalmatch
 # Les empreintes déjà calculées : ligne N de photos.csv = empreinte N du .npy
 folder = "data/derived/embeddings/catalogue/2026-11-06_catalogue_tt/"
 photos = list(csv.DictReader(open(folder + "photos.csv")))
-catalogue = np.load(folder + "cetaceanet.npy")
+catalogue = np.load(folder + "cetaceanet_v2.npy")
 
 # Une nouvelle photo
 query = dorsalmatch.Embedder("cetaceanet").embed(["nouvelle.jpg"])

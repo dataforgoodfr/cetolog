@@ -93,8 +93,7 @@ with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
         with gr.Column(scale=3):
             candidates = gr.Gallery(candidate_photos(first), label=f"Les {SHOWN} dauphins du catalogue les plus ressemblants",
                                     columns=2, height=900, object_fit="contain")
-            gr.Markdown("**Score** : le cosinus entre les empreintes des dorsales, moyenné sur les côtés en commun. "
-                        "Plus il est proche de 1, plus les dorsales se ressemblent.")
+            gr.Markdown("**Score** : le meilleur cosinus entre les empreintes des dorsales, tous côtés confondus. ")
 
     with gr.Accordion(f"Parcourir le catalogue ({DOLPHINS} dauphins)", open=False):
         page = gr.State(1)

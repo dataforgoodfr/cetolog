@@ -1,6 +1,6 @@
 # Le faire évoluer
 
-D'autres modèles à tester, d'autres étapes à implémenter. Pour chacune : la brancher, la mesurer avec [le notebook](../../notebooks/metriques_catalogue.ipynb) sur les mêmes photos, et comparer à CetaceaNet.
+D'autres modèles à tester, d'autres étapes à implémenter. Pour chacune : la brancher, la mesurer avec [le notebook](../../notebooks/baseline_ml.ipynb) sur les mêmes photos, et comparer à CetaceaNet.
 
 ## D'autres modèles
 
@@ -17,11 +17,11 @@ Les pistes du bas du schéma et de la feuille de route :
 
 | Piste | Objectif | Outils | Où |
 |---|---|---|---|
-| Recherche affinée | Chercher sur le même côté et regrouper par dauphin | | fait, dans [`propositions.py`](../../pipeline/propositions.py) |
-| Recherche en miroir | Comme Miraceti : une gauche contre le catalogue droit | | [`propositions.py`](../../pipeline/propositions.py) |
+| Recherche affinée | Chercher sur le même côté et regrouper par dauphin | | fait, dans [`propositions.py`](../../demo/propositions.py) |
+| Recherche en miroir | Comme Miraceti : une gauche contre le catalogue droit | | [`propositions.py`](../../demo/propositions.py) |
 | Re-ranking | Réordonner les candidats | ALIKED, LightGlue | après le top 10 |
 | Top 10 expliqué | Montrer les zones qui justifient une proposition | Grad-CAM, LightGlue | la démo [`demo/app.py`](../../demo/app.py) |
-| Nouveaux individus | Repérer un individu sans candidat assez proche | | [`propositions.py`](../../pipeline/propositions.py) |
+| Nouveaux individus | Repérer un individu sans candidat assez proche | | [`propositions.py`](../../demo/propositions.py) |
 | Validation humaine | Choisir un dauphin ou créer un identifiant | | [vers une base de données](../cetolog_pipeline/bdd.md) |
-| Ajout à l'index | Rendre une photo validée cherchable aussitôt | | une nouvelle version du catalogue, puis `bootstrap` |
+| Ajout à l'index | Rendre une photo validée cherchable aussitôt | | une nouvelle version du catalogue et de ses empreintes |
 | Réentraînement | Adapter le modèle si le catalogue a grossi | | seulement si besoin |

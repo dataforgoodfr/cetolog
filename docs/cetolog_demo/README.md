@@ -22,16 +22,16 @@ bucket cetolog-data
  ├─ derived/embeddings/   ── au démarrage ─────────▶  les empreintes (quelques Mo)
  └─ curated/<jeu>/photos/ ── à chaque affichage ───▶  seulement les photos montrées
                                                           │
-                                   propose() de pipeline/propositions.py
+                                   propose() de demo/propositions.py
                                                           │
                                                           ▼
                                               l'interface Gradio
 ```
 
-- **Le bucket doit être à jour** : la pipeline y envoie les données avec `push` (voir [lancer la pipeline](../cetolog_pipeline/lancer.md)).
+- **Le bucket doit être à jour** : la démo y lit les empreintes et les photos de la dernière livraison.
 - **Les photos sont téléchargées à la demande** : le catalogue complet pèse plusieurs Go, la démo ne prend que celles qu'elle affiche.
 - **Rien n'est gardé** : tout est copié dans un dossier temporaire, effacé à l'arrêt.
-- **Les propositions sont les mêmes** que celles de `run` : la démo appelle la même fonction, [`propose`](../../pipeline/propositions.py).
+- **Les propositions sont calculées au démarrage** par [`propose`](../../demo/propositions.py), à partir des empreintes du bucket.
 
 ## La lancer
 
@@ -47,7 +47,7 @@ Les photos de Miraceti ne sont pas publiques : avec `DEMO_PASSWORD` (et `DEMO_US
 
 ## La mettre en ligne sur Clever Cloud
 
-Le [`demo/Dockerfile`](../../demo/Dockerfile) construit une image de la démo : sans PyTorch, sans `data/`, sans `.env`. Elle écoute sur le port 8080, celui qu'attend Clever Cloud. Chaque image a son Dockerfile dans son dossier (la pipeline aura le sien), et toutes se construisent depuis la racine du dépôt, qui a le code et `uv.lock`.
+Le [`demo/Dockerfile`](../../demo/Dockerfile) construit une image de la démo : sans PyTorch, sans `data/`, sans `.env`. Elle écoute sur le port 8080, celui qu'attend Clever Cloud. Chaque image a son Dockerfile dans son dossier (la chaîne de données pourra avoir le sien), et toutes se construisent depuis la racine du dépôt, qui a le code et `uv.lock`.
 
 1. **Créer une application Docker** sur Clever Cloud, reliée à ce dépôt.
 2. **Renseigner les variables d'environnement** dans la console Clever Cloud, jamais dans l'image :

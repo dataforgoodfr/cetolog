@@ -40,7 +40,7 @@ derived/embeddings/<jeu>/<livraison>/          les empreintes
 derived/propositions/<best_of>.csv             les candidats de chaque individu d'un best-of
 ```
 
-### Tu travailles sur la pipeline
+### Tu travailles sur la chaîne de données
 
 Tu pars des zips livrés par Miraceti, la couche iso-source.
 
@@ -48,7 +48,7 @@ Tu pars des zips livrés par Miraceti, la couche iso-source.
 uv run python -m pipeline.storage pull
 ```
 
-`pull` copie `raw/` du bucket dans `data/raw/`, en sautant ce qui est déjà là. Comptez quelques minutes : le catalogue pèse 2,6 Go. Ensuite, [le catalogue](catalogue.md#comment-chaque-couche-est-produite) explique comment produire `curated/` et `derived/`.
+`pull` copie `raw/` du bucket dans `data/raw/`, en sautant ce qui est déjà là. Comptez quelques minutes : le catalogue pèse 2,6 Go. Ensuite, [le notebook de livraison](../../notebooks/data_livraison.ipynb) dit ce qu'on attend.
 
 ### Tu travailles sur le ML
 
@@ -62,9 +62,7 @@ bucket.pull(prefix="curated/")  # les photos prêtes et leurs manifestes : envir
 bucket.pull(prefix="derived/")  # les empreintes et les propositions : quelques Mo
 ```
 
-L'historique ne se reconstruit pas avec la pipeline : on le récupère prêt dans le bucket.
-
-C'est fait une fois : ensuite, tu travailles sur `data/` en local, avec `dorsalmatch` et [le notebook](../../notebooks/metriques_catalogue.ipynb).
+C'est fait une fois : ensuite, tu travailles sur `data/` en local, avec `dorsalmatch` et [le notebook](../../notebooks/baseline_ml.ipynb).
 
 ### Tu veux juste un fichier
 
@@ -80,6 +78,6 @@ bucket.download("curated/historique/manifests/2026-10-29_miraceti.csv", "histori
 
 ## 4. Envoyer des données dans le bucket
 
-> **NE JAMAIS supprimer `raw/` dans le bucket.** Ce sont les zips tels que livrés par Miraceti : la seule couche irremplaçable. Si on la perd, il faut tout redemander à Miraceti. `curated/` et `derived/` se reconstruisent avec la pipeline, `raw/` non.
+> **NE JAMAIS supprimer `raw/` dans le bucket.** Ce sont les zips tels que livrés par Miraceti : la seule couche irremplaçable. Si on la perd, il faut tout redemander à Miraceti. `curated/` et `derived/` se reconstruisent à partir de `raw/`, l'inverse est impossible.
 
 C'est possible avec `pipeline.storage`, mais **attention** : tout ce qui arrive dans le bucket doit être décrit dans [le catalogue des données](catalogue.md). Avant d'envoyer quoi que ce soit, **mets à jour le catalogue** (le jeu, la livraison, ses chiffres, ses pièges), et préviens l'équipe.

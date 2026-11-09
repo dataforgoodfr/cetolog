@@ -53,7 +53,7 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 
 | Ton profil | Ta partie | Ta doc |
 |---|---|---|
-| Data engineer | La pipeline : des zips aux données prêtes, puis aux propositions | [docs/cetolog_pipeline](docs/cetolog_pipeline/README.md) |
+| Data engineer | La chaîne de données : des zips aux données prêtes, à construire | [docs/cetolog_pipeline](docs/cetolog_pipeline/README.md) |
 | Data scientist, ML engineer | Le ML : empreintes, recherche, d'autres modèles à tester | [docs/cetolog_ml](docs/cetolog_ml/README.md) |
 | Analytics engineer, géodonnées | La base de données, QGIS et la carte interactive | [vers une base de données](docs/cetolog_pipeline/bdd.md) |
 | Dev backend, dev frontend | L'outil de validation, qui part de la démo | [docs/cetolog_demo](docs/cetolog_demo/README.md) |
@@ -65,10 +65,10 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 
 | Dossier | Rôle |
 |---|---|
-| `pipeline/` | Des zips de Miraceti aux données prêtes, puis aux propositions : `bootstrap` pour le catalogue, `run` pour chaque best-of |
+| `pipeline/` | L'accès au bucket (`storage.py`) ; la chaîne de données est à construire |
 | `dorsalmatch/` | La chaîne ML : modèles, empreintes, recherche, mesure |
 | `demo/` | La démo Gradio : le ML propose, Miraceti décide |
-| `notebooks/` | Les résultats, en chiffres ; en photos une fois relancé en local |
+| `notebooks/` | `data_livraison` : récupérer les données et voir ce qu'on attend ; `baseline_ml` : le niveau à battre |
 | `docs/` | La documentation, un dossier par partie |
 | `tests/` | Les tests, sans données ni bucket |
 | `data/` | La copie locale du bucket, jamais dans Git |
@@ -105,7 +105,7 @@ uvx pre-commit install
 
 ## Les règles
 
-> **NE JAMAIS supprimer `raw/` dans le bucket.** Ce sont les zips tels que livrés par Miraceti : la seule couche irremplaçable. Si on la perd, il faut tout redemander à Miraceti. `curated/` et `derived/` se reconstruisent avec la pipeline, `raw/` non.
+> **NE JAMAIS supprimer `raw/` dans le bucket.** Ce sont les zips tels que livrés par Miraceti : la seule couche irremplaçable. Si on la perd, il faut tout redemander à Miraceti. `curated/` et `derived/` se reconstruisent à partir de `raw/`, l'inverse est impossible.
 
 - **Jamais** de `.env`, de clés ou de données dans Git : le dépôt est public.
 - **Pas de photos de Miraceti publiées** sans leur accord.

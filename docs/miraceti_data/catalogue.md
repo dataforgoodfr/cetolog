@@ -31,23 +31,12 @@ Le schéma se modifie dans [miraceti_data_couches.excalidraw](../assets/miraceti
 | Couche | Contient | Écrit par | Si on la perd |
 |---|---|---|---|
 | **raw/** (iso-source) | Les zips de Miraceti, tels quels | Dépôt à la main | Il faut redemander à Miraceti |
-| **curated/** | Les photos dézippées, rangées par individu, et un manifeste | `pipeline/photos/` | On relance la pipeline |
-| **derived/** | Les empreintes du ML et les propositions | `pipeline/embeddings.py`, `pipeline/propositions.py` | On relance le calcul |
+| **curated/** | Les photos dézippées, rangées par individu, et un manifeste | La chaîne de données, à construire | On la relance depuis `raw/` |
+| **derived/** | Les empreintes du ML et les propositions | La chaîne de données, à construire | On relance le calcul |
 
 ### Comment chaque couche est produite
 
-Depuis la racine du dépôt, une fois les zips dans `data/raw/<jeu>/` (voir [l'accès](acces.md)) :
-
-| Pour produire | Commande | Quand |
-|---|---|---|
-| `curated/catalogue/` et ses empreintes | `uv run --group ml python -m pipeline.bootstrap` | Une fois par version du catalogue |
-| `curated/best_of/`, ses empreintes et ses propositions | `uv run --group ml python -m pipeline.run` | À chaque nouveau best-of |
-
-Le détail est dans [la pipeline de Cétolog](../cetolog_pipeline/lancer.md).
-
-- **Une livraison déjà préparée est sautée**, et un calcul déjà fait aussi : on peut relancer sans risque. Pour refaire une livraison, il suffit de supprimer son manifeste.
-- **Les empreintes** sont calculées avec CetaceaNet.
-- **L'historique** a été préparé en local avec la même logique. Son script n'est pas dans le dépôt.
+Les versions actuelles de `curated/` et `derived/` sont prêtes dans le bucket. La chaîne qui les produit est à construire : voir [le notebook de livraison](../../notebooks/data_livraison.ipynb). Les empreintes actuelles sont calculées avec CetaceaNet.
 
 **Les règles de nommage :**
 - **un jeu** est un dossier : `catalogue`, `best_of` ou `historique` ;
@@ -104,7 +93,7 @@ Bestof_20230307_Sete/
 
 **Lecture :** le dossier `IND<n>` donne l'individu. Le nom donne le côté, le numéro et la date. Chaque individu a entre 1 et 19 photos. Aucune anomalie.
 
-**Ce que la pipeline lit :** toutes les photos de `IND/`, pas seulement les meilleures. Miraceti compare au catalogue une photo par côté (`DD/`, `DG/`) ; la pipeline cherche chaque individu avec toutes ses photos et garde, pour chaque dauphin du catalogue, le meilleur cosinus. Aucune photo n'est perdue, puisque `DD/` et `DG/` sont des copies. Deux conséquences :
+**Ce qui est utilisé :** toutes les photos de `IND/`, pas seulement les meilleures. Miraceti compare au catalogue une photo par côté (`DD/`, `DG/`) ; la démo cherche chaque individu avec toutes ses photos et garde, pour chaque dauphin du catalogue, le meilleur cosinus. Aucune photo n'est perdue, puisque `DD/` et `DG/` sont des copies. Deux conséquences :
 - le manifeste ne dit pas encore quelle photo Miraceti a élue meilleure, alors que c'est elle qui entre au catalogue ;
 - plus un individu a de photos, plus le score de son premier candidat a tendance à monter : un score n'a de sens que comparé aux autres candidats du même individu.
 
@@ -154,6 +143,21 @@ TUTR0033/
 | `cetaceanet.npy` | Une empreinte par ligne de `photos.csv` : 688 nombres, de norme 1 |
 
 **Ligne N de `photos.csv` = empreinte N du `.npy`.** Le cosinus entre deux photos est un simple produit scalaire : plus il est proche de 1, plus les dorsales se ressemblent.
+
+**Les propositions**, `derived/propositions/<best_of>.csv` : une ligne par candidat, 10 par individu, du plus probable au moins probable.
+
+| Colonne | Contenu |
+|---|---|
+| `best_of` | Le best-of traité |
+| `catalogue` | La version du catalogue utilisée |
+| `individu` | L'individu provisoire : `IND3` |
+| `rang` | 1 pour le plus ressemblant, jusqu'à 10 |
+| `candidat` | Le dauphin du catalogue proposé : `TUTR0465` |
+| `score` | La moyenne des cosinus des côtés en commun |
+| `cosinus_D`, `cosinus_G` | Le meilleur cosinus de chaque côté, vide si l'un des deux n'a pas ce côté |
+| `deja_au_catalogue` | Le ou les `TUTR` qui ont déjà une photo de cet individu : la réponse, si elle est connue |
+
+**Le score n'est pas une probabilité.** Il sert à classer les candidats d'un même individu, pas à dire « c'est lui à 80 % ».
 
 ## Tenir ce catalogue à jour
 

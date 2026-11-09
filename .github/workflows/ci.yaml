@@ -59,7 +59,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # clever-tools 5.x demande Node 24 ou plus
+          node-version: 24
       - run: npm install -g clever-tools@5.4.0
       - run: clever link "$CLEVER_APP_ID"
         env:

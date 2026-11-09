@@ -22,7 +22,8 @@ class ColorEmbedder:
 
 @pytest.fixture(autouse=True)
 def fake_model(monkeypatch):
-    monkeypatch.setattr(dorsalmatch, "Embedder", ColorEmbedder, raising=False)
+    # setitem : setattr lirait d'abord Embedder, ce qui importerait PyTorch
+    monkeypatch.setitem(vars(dorsalmatch), "Embedder", ColorEmbedder)
 
 
 def image_bytes(color):

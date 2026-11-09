@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Une nouvelle poussée annule la CI en cours d'une PR, jamais celle de main
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: pre-commit/action@v3.0.1
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # Mêmes versions de uv et de Python que demo/Dockerfile
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.7"
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv run --frozen pytest -q
+
+  build-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f demo/Dockerfile -t cetolog-demo .
+
+  deploy-demo:
+    needs: [pre-commit, tests, build-demo]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency: deploy-demo
+    env:
+      CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+      CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g clever-tools@5.4.0
+      - run: clever link "$CLEVER_APP_ID"
+        env:
+          CLEVER_APP_ID: ${{ secrets.CLEVER_APP_ID }}
+      - run: clever deploy --force

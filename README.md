@@ -103,6 +103,10 @@ Active une fois les contrôles lancés à chaque commit (`ruff`, et refus des `.
 uvx pre-commit install
 ```
 
+```bash
+uvx pre-commit run --all-files
+```
+
 ## Les règles
 
 > **NE JAMAIS supprimer `raw/` dans le bucket.** Ce sont les zips tels que livrés par Miraceti : la seule couche irremplaçable. Si on la perd, il faut tout redemander à Miraceti. `curated/` et `derived/` se reconstruisent à partir de `raw/`, l'inverse est impossible.

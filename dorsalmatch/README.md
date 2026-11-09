@@ -43,7 +43,7 @@ Utilisés tels quels, sans réentraînement. Les poids sont téléchargés depui
 
 **Ajouter un modèle :** un fichier dans [`models/`](models), avec son réseau et son prétraitement, puis une ligne dans `MODELS` ([`models/__init__.py`](models/__init__.py)).
 
-Les deux pièges de CetaceaNet, réglés dans [`models/cetaceanet.py`](models/cetaceanet.py) : les bons poids sont dans `last.ckpt` (le `model.safetensors` donne des empreintes presque identiques d'un dauphin à l'autre), et les photos se normalisent avec une moyenne et un écart-type de 0,5, pas avec les valeurs ImageNet.
+Les deux pièges de CetaceaNet, réglés dans [`models/cetaceanet.py`](models/cetaceanet.py) : les bons poids sont dans `last.ckpt` (le `model.safetensors` donne des empreintes presque identiques d'un dauphin à l'autre), et les photos se normalisent avec les valeurs ImageNet, celles du code d'entraînement, pas avec une moyenne et un écart-type de 0,5.
 
 ## Résultats
 

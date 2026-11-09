@@ -79,6 +79,8 @@ Catalogue Tt/
 | double extension | 1 | `DG_TUTR0004_sln-35.jpg.jpg` |
 | nom illisible (0555 ou 0558 ?) | 1 | `DG_TUTR05558_…`, rangée dans `illisible/` |
 
+**À faire trancher par Miraceti :** les 12 doublons exacts sont 6 fichiers présents sous deux `TUTR` différents (`TUTR0001` et `TUTR1167`, `TUTR1174` et `TUTR1499`, `TUTR0207` et `TUTR1333`, `TUTR0257` et `TUTR1364`). Trois autres paires ont des photos quasi identiques : `TUTR1854` et `TUTR1855`, `TUTR1185` et `TUTR1186`, `TUTR1865` et `TUTR1877`.
+
 ### best_of
 
 **Pour le ML :** les requêtes, ce que l'outil recevra. Le `TUTR` de chaque individu n'est pas encore connu.
@@ -140,7 +142,8 @@ TUTR0033/
 | Fichier | Contenu |
 |---|---|
 | `photos.csv` | `livraison`, `individu`, `cote`, `fichier_origine`, `sha256` : une ligne par photo |
-| `cetaceanet.npy` | Une empreinte par ligne de `photos.csv` : 688 nombres, de norme 1 |
+| `cetaceanet_v2.npy` | La version utilisée : une empreinte par ligne de `photos.csv`, 688 nombres, de norme 1 (normalisation ImageNet, moyenne de la photo et de son miroir) |
+| `cetaceanet.npy` | L'ancienne version (normalisation à 0,5, sans miroir), gardée pour revenir en arrière |
 
 **Ligne N de `photos.csv` = empreinte N du `.npy`.** Le cosinus entre deux photos est un simple produit scalaire : plus il est proche de 1, plus les dorsales se ressemblent.
 
@@ -153,8 +156,8 @@ TUTR0033/
 | `individu` | L'individu provisoire : `IND3` |
 | `rang` | 1 pour le plus ressemblant, jusqu'à 10 |
 | `candidat` | Le dauphin du catalogue proposé : `TUTR0465` |
-| `score` | La moyenne des cosinus des côtés en commun |
-| `cosinus_D`, `cosinus_G` | Le meilleur cosinus de chaque côté, vide si l'un des deux n'a pas ce côté |
+| `score` | Le meilleur cosinus, tous côtés confondus |
+| `cosinus_D`, `cosinus_G` | Le meilleur cosinus avec la photo droite, puis gauche, du candidat ; vide si le candidat n'a pas ce côté |
 | `deja_au_catalogue` | Le ou les `TUTR` qui ont déjà une photo de cet individu : la réponse, si elle est connue |
 
 **Le score n'est pas une probabilité.** Il sert à classer les candidats d'un même individu, pas à dire « c'est lui à 80 % ».

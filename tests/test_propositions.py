@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from demo.propositions import catalogue_photos, latest, load, propose, write
+from demo.propositions import MODEL, catalogue_photos, latest, load, propose, write
 
 
 def add_delivery(data, kind, delivery, rows, embeddings):
@@ -12,7 +12,7 @@ def add_delivery(data, kind, delivery, rows, embeddings):
     folder.mkdir(parents=True)
     pd.DataFrame(rows, columns=["individu", "cote", "fichier_origine"]).to_csv(folder / "photos.csv", index=False)
     vectors = np.array(embeddings, dtype=float)
-    np.save(folder / "cetaceanet.npy", vectors / np.linalg.norm(vectors, axis=1, keepdims=True))
+    np.save(folder / f"{MODEL}.npy", vectors / np.linalg.norm(vectors, axis=1, keepdims=True))
 
 
 @pytest.fixture
@@ -50,6 +50,36 @@ def test_propose_ranks_candidates_and_orders_individuals(data):
     candidates = propositions["IND2"]["candidats"]
     assert [candidate["individu"] for candidate in candidates] == ["TUTR0001", "TUTR0002"]
     assert candidates[0]["score"] == pytest.approx(0.8)
+
+
+def test_propose_searches_the_opposite_side(tmp_path):
+    add_delivery(tmp_path, "catalogue", "c", [("TUTR0001", "D", "a.jpg")], [[1, 0]])
+    add_delivery(tmp_path, "best_of", "b", [("IND1", "G", "x.jpg")], [[0.8, 0.6]])
+
+    candidates = propose("b", "c", tmp_path)["IND1"]["candidats"]
+
+    assert [candidate["individu"] for candidate in candidates] == ["TUTR0001"]
+    assert candidates[0]["score"] == pytest.approx(0.8)
+
+
+def test_propose_scores_a_candidate_with_its_best_side(tmp_path):
+    add_delivery(tmp_path, "catalogue", "c", [("TUTR0001", "D", "a.jpg"), ("TUTR0001", "G", "b.jpg")], [[1, 0], [0, 1]])
+    add_delivery(tmp_path, "best_of", "b", [("IND1", "D", "x.jpg")], [[0.8, 0.6]])
+
+    candidate = propose("b", "c", tmp_path)["IND1"]["candidats"][0]
+
+    assert (candidate["D"], candidate["G"]) == pytest.approx((0.8, 0.6))
+    assert candidate["score"] == pytest.approx(0.8)
+
+
+def test_propose_breaks_ties_by_identifier(tmp_path):
+    names = [f"TUTR{number:04d}" for number in range(1, 21)]
+    add_delivery(tmp_path, "catalogue", "c", [(name, "D", f"{name}.jpg") for name in reversed(names)], [[1, 0]] * len(names))
+    add_delivery(tmp_path, "best_of", "b", [("IND1", "D", "x.jpg")], [[0.8, 0.6]])
+
+    candidates = propose("b", "c", tmp_path)["IND1"]["candidats"]
+
+    assert [candidate["individu"] for candidate in candidates] == names
 
 
 def test_propose_sets_aside_the_same_photo(data):

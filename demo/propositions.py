@@ -12,7 +12,7 @@ import dorsalmatch
 DATA = Path("data")
 TOP = 10
 COLUMNS = ["best_of", "catalogue", "individu", "rang", "candidat", "score", "cosinus_D", "cosinus_G", "deja_au_catalogue"]
-MODEL = "cetaceanet"
+MODEL = "cetaceanet_v2"
 SIDES = ("D", "G")
 # Au-delà, même photo déjà au catalogue : écartée, mais donne la réponse
 NEAR_IDENTICAL = 0.97
@@ -38,9 +38,9 @@ def by_number(name: str) -> int:
     return int(re.sub(r"\D", "", name) or 0)
 
 
-# 1. Pour un côté, le meilleur cosinus de chaque dauphin du catalogue
+# 1. Toutes les photos de l'individu contre un côté du catalogue : le meilleur cosinus de chaque dauphin
 def best_cosines(photos, embeddings, catalogue, catalogue_embeddings, side: str) -> tuple[dict[str, float], set[str]]:
-    lines = [line for line, photo in enumerate(photos) if photo["cote"] == side]
+    lines = [line for line, photo in enumerate(photos) if photo["cote"] in SIDES]
     catalogue_lines = [line for line, photo in enumerate(catalogue) if photo["cote"] == side]
     if not lines or not catalogue_lines:
         return {}, set()
@@ -57,7 +57,7 @@ def best_cosines(photos, embeddings, catalogue, catalogue_embeddings, side: str)
     return best, identical
 
 
-# 2. Score : moyenne des côtés en commun
+# 2. Score : le meilleur cosinus, tous côtés confondus
 def rank(photos, embeddings, catalogue, catalogue_embeddings) -> tuple[list[dict], set[str]]:
     by_side, identical = {}, set()
     for side in SIDES:
@@ -67,9 +67,10 @@ def rank(photos, embeddings, catalogue, catalogue_embeddings) -> tuple[list[dict
     candidates = []
     for individual in set(by_side["D"]) | set(by_side["G"]):
         scores = {side: by_side[side][individual] for side in SIDES if individual in by_side[side]}
-        candidates.append({"individu": individual, "score": float(np.mean(list(scores.values()))), **scores})
+        candidates.append({"individu": individual, "score": float(max(scores.values())), **scores})
 
-    return sorted(candidates, key=lambda candidate: -candidate["score"]), identical
+    # À score égal, par identifiant : le classement ne change pas d'un lancement à l'autre
+    return sorted(candidates, key=lambda candidate: (-candidate["score"], candidate["individu"])), identical
 
 
 # 3. Les candidats de chaque individu d'un best-of

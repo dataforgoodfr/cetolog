@@ -19,6 +19,35 @@ def test_unknown_model():
         dorsalmatch.Embedder("inconnu")
 
 
+def test_cetaceanet_uses_the_training_normalisation():
+    pytest.importorskip("timm")
+    from PIL import Image
+
+    from dorsalmatch.models.cetaceanet import PREPROCESSING
+
+    white = PREPROCESSING(Image.new("RGB", (8, 8), (255, 255, 255)))
+    assert white[0].max().item() == pytest.approx((1 - 0.485) / 0.229, abs=1e-3)
+
+
+def test_embed_averages_the_photo_and_its_mirror():
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("timm")
+    from PIL import Image
+
+    from dorsalmatch.embedder import Embedder
+
+    # Faux réseau : la moyenne de la moitié gauche, puis celle de la moitié droite
+    embedder = Embedder.__new__(Embedder)
+    embedder.device = "cpu"
+    embedder.preprocessing = lambda image: torch.from_numpy(np.array(image)).permute(2, 0, 1).float()
+    embedder.network = lambda x: torch.stack([x[..., :2].mean(dim=(1, 2, 3)), x[..., 2:].mean(dim=(1, 2, 3))], dim=1)
+
+    # Moitié gauche blanche, moitié droite noire : sans le miroir, l'empreinte vaudrait [1, 0]
+    photo = Image.fromarray(np.array([[[255] * 3] * 2 + [[0] * 3] * 2] * 4, dtype=np.uint8))
+
+    assert embedder.embed([photo]) == pytest.approx(np.array([[2 ** -0.5, 2 ** -0.5]]))
+
+
 def test_search_in_catalogue():
     results = dorsalmatch.search(unit_vectors([1, 0.05]), unit_vectors([0, 1], [1, 0]), k=1)
     assert results[0][0][0] == 1

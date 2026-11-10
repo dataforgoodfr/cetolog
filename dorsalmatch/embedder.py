@@ -42,7 +42,7 @@ class Embedder:
             # Sans rotation EXIF
             opened = [image if isinstance(image, Image.Image) else Image.open(image) for image in images[start:start + batch_size]]
             tensors = torch.stack([self.preprocessing(image.convert("RGB")) for image in opened]).to(self.device)            
-            # UPDATE : Moyenne de la photo et de son miroir
+            # Moyenne de la photo et de son miroir
             plain = F.normalize(self.network(tensors).float(), dim=1)
             mirrored = F.normalize(self.network(tensors.flip(-1)).float(), dim=1)
             batches.append(F.normalize(plain + mirrored, dim=1).cpu())

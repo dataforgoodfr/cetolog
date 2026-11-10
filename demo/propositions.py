@@ -12,7 +12,7 @@ import dorsalmatch
 DATA = Path("data")
 TOP = 10
 COLUMNS = ["best_of", "catalogue", "individu", "rang", "candidat", "score", "cosinus_D", "cosinus_G", "deja_au_catalogue"]
-MODEL = "cetaceanet_v2"
+MODEL = "cetaceanet"
 SIDES = ("D", "G")
 # Au-delà, même photo déjà au catalogue : écartée, mais donne la réponse
 NEAR_IDENTICAL = 0.97

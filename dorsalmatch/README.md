@@ -53,7 +53,7 @@ Les photos sont utilisées telles quelles, sans recadrage automatique : elles so
 
 ## Limites
 
-- 50 dauphins seulement.
+- 50 dauphins seulement dans la baseline : les 11 de Sète, passés en historique, restent à y ajouter.
 - Tous les dauphins de l'historique sont déjà au catalogue : la détection des nouveaux individus ne peut pas encore être mesurée.
 - Il reste à vérifier que ces photos n'ont pas servi à entraîner CetaceaNet.
 - Les versions des poids ne sont pas figées.

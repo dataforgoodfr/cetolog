@@ -12,9 +12,7 @@ Ses données d'observation (images, coordonnées GPS, reconnaissance d'individus
 
 Miraceti reconnaît chaque grand dauphin à sa **nageoire dorsale** : les encoches et les cicatrices sont comme une empreinte digitale.
 
-![La chaîne de photo-identification de Miraceti](docs/assets/miraceti_chaine.png)
-
-Source du schéma : [miraceti_chaine.excalidraw](docs/assets/miraceti_chaine.excalidraw).
+Cf. ce qu'a fait l'équipe produit sur Figma : [le matching, étape par étape](https://www.figma.com/board/4hqR7D4iy9CtDQxTRvLoYH/DFG-C%C3%A9tolog-ExMap-Matching-27.10.2026).
 
 ## Les deux objectifs
 
@@ -33,19 +31,20 @@ Les photos de Miraceti sont dans un bucket S3 **privé**. Elles passent par troi
 
 ![Les trois couches des données](docs/assets/miraceti_data_couches.png)
 
-Source du schéma : [miraceti_data_couches.excalidraw](docs/assets/miraceti_data_couches.excalidraw).
+Le schéma se modifie dans [miraceti_data_couches.excalidraw](docs/assets/miraceti_data_couches.excalidraw), à ouvrir sur [le tableau Excalidraw de Data For Good](https://tableau.services.dataforgood.fr/).
 
 | Jeu | Ce que c'est | Photos | Dauphins |
 |---|---|---|---|
 | `catalogue` | Une photo par côté pour chaque dauphin connu : la base de recherche | 2 457 | 1 531 |
-| `best_of` | Les photos d'une sortie en mer, par individu provisoire : ce qu'il faut identifier | 227 | 35 |
-| `historique` | Des dauphins déjà identifiés, sur plusieurs années : pour mesurer le ML | 377 | 50 |
+| `best_of` | Les photos d'une sortie en mer, par individu provisoire : ce qu'il faut identifier | 134 | 24 |
+| `historique` | Des dauphins déjà identifiés, sur plusieurs années : pour mesurer le ML | 470 | 61 |
+| `observations` | Les observations de cétacés de 2013 à 2026, en shapefile : pour la carte | 1 083 observations | |
 
 Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Miraceti](docs/miraceti_data/README.md).
 
 ## Par où commencer
 
-**1. Comprendre le métier.** Le schéma ci-dessus, puis [les données de Miraceti](docs/miraceti_data/README.md).
+**1. Comprendre le métier.** Le Figma de l'équipe produit (lien ci-dessus), puis [les données de Miraceti](docs/miraceti_data/README.md).
 
 **2. Demander les accès.** Le bucket est privé : demande les credentials à **`mandresyandri`**. Puis suis [l'accès aux données](docs/miraceti_data/acces.md) pour créer ton `.env` et vérifier la connexion.
 

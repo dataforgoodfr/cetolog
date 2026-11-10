@@ -30,7 +30,7 @@ Si tout va bien, la commande affiche `connexion OK : cetolog-data`. Sinon, l'err
 
 ## 3. Ce dont tu as besoin selon ton métier
 
-Le bucket est rangé comme ta copie locale `data/` : les trois couches, puis un dossier par jeu (`catalogue`, `best_of`, `historique`).
+Le bucket est rangé comme ta copie locale `data/` : les trois couches, puis un dossier par jeu (`catalogue`, `best_of`, `historique`, `observations`).
 
 ```text
 raw/<jeu>/<livraison>.zip                      les zips de Miraceti, tels que livrés
@@ -58,7 +58,7 @@ Tu as besoin des photos prêtes (`curated/`) et des empreintes (`derived/`), pas
 from pipeline.storage import connect
 
 bucket = connect()  # lit .env
-bucket.pull(prefix="curated/")  # les photos prêtes et leurs manifestes : environ 3 Go
+bucket.pull(prefix="curated/")  # les photos prêtes et leurs manifestes : environ 3,4 Go
 bucket.pull(prefix="derived/")  # les empreintes et les propositions : quelques Mo
 ```
 

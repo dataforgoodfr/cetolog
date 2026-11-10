@@ -6,7 +6,7 @@ Le modèle ne reconnaît pas un dauphin : il transforme une photo en empreinte n
 
 ![La chaîne ML](../assets/dorsalmatch.png)
 
-Le schéma se modifie avec [dorsalmatch.excalidraw](../assets/dorsalmatch.excalidraw), à ouvrir sur [le tableau Excalidraw de Data For Good](https://tableau.services.dataforgood.fr/).
+Le schéma se modifie dans [dorsalmatch.excalidraw](../assets/dorsalmatch.excalidraw), à ouvrir sur [le tableau Excalidraw de Data For Good](https://tableau.services.dataforgood.fr/).
 
 1. **[Comment ça marche](fonctionnement.md)** : chaque étape du schéma, et où elle est dans le code.
 2. **[L'utiliser](utiliser.md)** : calculer des empreintes, chercher, mesurer.

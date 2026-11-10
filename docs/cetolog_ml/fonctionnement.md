@@ -18,7 +18,7 @@ Les étapes du [schéma](../assets/dorsalmatch.png), et où elles sont dans le c
 
 **3. Le modèle.** CetaceaNet, un EfficientNetV2-M issu de la solution gagnante de Kaggle Happywhale, utilisé tel quel. Attention : les bons poids sont dans `last.ckpt`, pas dans `model.safetensors`.
 
-**4. L'empreinte.** 688 nombres, ramenés à une norme de 1 dans [`embedder.py`](../../dorsalmatch/embedder.py) : c'est la moyenne de l'empreinte de la photo et de celle de son miroir. Elles sont rangées dans `data/derived/embeddings/<jeu>/<livraison>/cetaceanet_v2.npy`, avec `photos.csv` : ligne N = photo N.
+**4. L'empreinte.** 688 nombres, ramenés à une norme de 1 dans [`embedder.py`](../../dorsalmatch/embedder.py) : c'est la moyenne de l'empreinte de la photo et de celle de son miroir. Elles sont rangées dans `data/derived/embeddings/<jeu>/<livraison>/cetaceanet.npy`, avec `photos.csv` : ligne N = photo N.
 
 ## B. Comparer : quelles empreintes se ressemblent ?
 
@@ -40,6 +40,6 @@ Ce que ça donne sur nos données : [le notebook](../../notebooks/baseline_ml.ip
 
 **La normalisation ImageNet.** C'est celle du code d'entraînement de la solution gagnante de Happywhale. Le 0,5 est seulement le réglage par défaut de timm pour les modèles `tf_`.
 
-**Les deux côtés, sans miroir.** Le modèle reconnaît un dauphin d'un côté à l'autre : une gauche se cherche directement dans les droites. Les 612 dauphins qui n'ont qu'un côté au catalogue restent ainsi trouvables.
+**Les deux côtés, sans chercher dans les deux sens.** Le miroir sert seulement à calculer l'empreinte (étape 4). Le modèle reconnaît un dauphin d'un côté à l'autre : une gauche se cherche directement dans les droites. Les 612 dauphins qui n'ont qu'un côté au catalogue restent ainsi trouvables.
 
-**Des empreintes calculées de la même façon.** Une empreinte n'est comparable qu'à des empreintes issues du même prétraitement. Si on le change, on recalcule les trois jeux sous un nouveau nom de fichier : `storage push` n'écrase jamais, et l'ancien fichier permet de revenir en arrière.
+**Des empreintes calculées de la même façon.** Une empreinte n'est comparable qu'à des empreintes issues du même prétraitement. Si on le change, on recalcule les empreintes des trois jeux de photos. `storage push` n'écrase jamais : il faut d'abord supprimer l'ancien `derived/embeddings/` dans le bucket, jamais `raw/`.

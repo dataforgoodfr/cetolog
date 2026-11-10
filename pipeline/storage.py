@@ -3,6 +3,7 @@ from __future__ import annotations
 import mimetypes
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import boto3
@@ -19,6 +20,7 @@ DATA = Path("data")
 PUSHED = (
     "curated/catalogue/photos", "curated/catalogue/manifests",
     "curated/best_of/photos", "curated/best_of/manifests",
+    "curated/historique/photos", "curated/historique/manifests",
     "derived/embeddings", "derived/propositions",
 )
 
@@ -112,17 +114,24 @@ class Bucket:
 
         print(f"{received} fichiers récupérés dans {data / prefix}")
 
-    def push(self, data: Path = DATA) -> None:
-        """Envoie PUSHED sans écraser. raw/ n'est jamais touché."""
-        sent = 0
+    def push(self, data: Path = DATA, workers: int = 16) -> None:
+        """Envoie PUSHED sans écraser, en parallèle. raw/ n'est jamais touché."""
+        # Une liste du bucket par dossier, plutôt qu'une requête par fichier
+        todo = []
         for folder in PUSHED:
+            existing = set(self.list_keys(f"{folder}/"))
             for path in sorted((data / folder).rglob("*")):
                 key = path.relative_to(data).as_posix()
-                if path.is_file() and not path.name.startswith(".") and self.head(key) is None:
-                    self.upload(path, key)
-                    sent += 1
+                if path.is_file() and not path.name.startswith(".") and key not in existing:
+                    todo.append((path, key))
 
-        print(f"{sent} fichiers envoyés vers {self.name}")
+        # Le client boto3 se partage entre threads
+        with ThreadPoolExecutor(workers) as pool:
+            for sent, _ in enumerate(pool.map(lambda item: self.upload(*item), todo), start=1):
+                if sent % 200 == 0:
+                    print(f"{sent} / {len(todo)}", flush=True)
+
+        print(f"{len(todo)} fichiers envoyés vers {self.name}")
 
 
 # python -m pipeline.storage check, pull ou push

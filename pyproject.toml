@@ -27,6 +27,7 @@ ml = [
     "torchvision>=0.21",
 ]
 notebook = [
+    "geopandas>=1.2.0",
     "ipykernel>=6.29",
     "matplotlib>=3.9",
     "nbconvert>=7.16",

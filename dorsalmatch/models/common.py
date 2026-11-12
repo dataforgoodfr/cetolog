@@ -13,12 +13,19 @@ INCEPTION = ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # couleurs de 0-255 à -1..1
 
 
 # Photo en carré, sans recadrage, normalisée
-def preprocessing(size: int, mean: tuple, std: tuple) -> Callable[[Image.Image], torch.Tensor]:
-    return T.Compose([
-        T.Resize((size, size), interpolation=T.InterpolationMode.BICUBIC),
-        T.ToTensor(),
-        T.Normalize(mean, std),
-    ])
+def preprocessing(
+    size: int,
+    mean: tuple,
+    std: tuple,
+    interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC,
+) -> Callable[[Image.Image], torch.Tensor]:
+    return T.Compose(
+        [
+            T.Resize((size, size), interpolation=interpolation),
+            T.ToTensor(),
+            T.Normalize(mean, std),
+        ]
+    )
 
 
 # GeM pooling
@@ -29,4 +36,9 @@ class GeM(nn.Module):
         self.eps = eps
 
     def forward(self, feature_map: torch.Tensor) -> torch.Tensor:
-        return feature_map.clamp(min=self.eps).pow(self.p).mean(dim=(-2, -1)).pow(1.0 / self.p)
+        return (
+            feature_map.clamp(min=self.eps)
+            .pow(self.p)
+            .mean(dim=(-2, -1))
+            .pow(1.0 / self.p)
+        )

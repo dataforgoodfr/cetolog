@@ -27,3 +27,7 @@ repos:
         language: fail
         entry: "Données interdites dans Git : elles restent dans data/ ou sur le bucket."
         files: '(^data/|\.(zip|npy|csv|xlsx)$)'
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout

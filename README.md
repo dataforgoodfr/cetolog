@@ -96,7 +96,7 @@ uv run python -m pipeline.storage check
 uv run pytest -q
 ```
 
-Active une fois les contrôles lancés à chaque commit (`ruff`, et refus des `.env`, des clés, des données et des fichiers de plus de 5 Mo) :
+Active une fois les contrôles lancés à chaque commit (`ruff`, nettoyage des sorties des notebooks, et refus des `.env`, des clés, des données et des fichiers de plus de 5 Mo) :
 
 ```bash
 uvx pre-commit install

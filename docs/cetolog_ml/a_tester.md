@@ -19,7 +19,7 @@ Les pistes du bas du schéma et de la feuille de route :
 |---|---|---|---|
 | Recherche affinée | Chercher sur les deux côtés et regrouper par dauphin | | fait, dans [`propositions.py`](../../demo/propositions.py) |
 | Re-ranking | Réordonner les candidats | ALIKED, LightGlue | après le top 10 |
-| Top 10 expliqué | Montrer les zones qui justifient une proposition | Grad-CAM, LightGlue | la démo [`demo/app.py`](../../demo/app.py) |
+| Top 10 expliqué | Montrer les zones qui justifient une proposition | Occlusion, Grad-CAM, zones réciproques ; LightGlue à tester | fait : [`explain.py`](../../dorsalmatch/explain.py), dans la démo ; voir [l'utiliser](utiliser.md#expliquer-un-matching) |
 | Nouveaux individus | Repérer un individu sans candidat assez proche | | [`propositions.py`](../../demo/propositions.py) |
 | Validation humaine | Choisir un dauphin ou créer un identifiant | | [vers une base de données](../cetolog_pipeline/bdd.md) |
 | Ajout à l'index | Rendre une photo validée cherchable aussitôt | | une nouvelle version du catalogue et de ses empreintes |

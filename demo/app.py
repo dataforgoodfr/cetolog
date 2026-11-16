@@ -11,6 +11,7 @@ os.environ["GRADIO_TEMP_DIR"] = WORKSPACE.name
 import gradio as gr  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from demo import explanations  # noqa: E402
 from demo.propositions import catalogue_photos, latest, load, propose  # noqa: E402
 from pipeline.storage import connect  # noqa: E402
 
@@ -94,6 +95,8 @@ with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
             candidates = gr.Gallery(candidate_photos(first), label=f"Les {SHOWN} dauphins du catalogue les plus ressemblants",
                                     columns=2, height=900, object_fit="contain")
             gr.Markdown("**Score** : le meilleur cosinus entre les empreintes des dorsales, tous côtés confondus. ")
+
+    explanations.panel(individual, PROPOSITIONS, CATALOGUE_PHOTOS, fetch, SHOWN)
 
     with gr.Accordion(f"Parcourir le catalogue ({DOLPHINS} dauphins)", open=False):
         page = gr.State(1)

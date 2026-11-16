@@ -6,6 +6,10 @@ Pour commencer, ouvre [le notebook de livraison](../../notebooks/data_livraison.
 
 Les données elles-mêmes (les jeux, leurs couches, leurs formats, leurs pièges) sont décrites dans [les données de Miraceti](../miraceti_data/README.md).
 
+## La cible : le manifeste
+
+Les manifestes du catalogue et du best-of que produit la chaîne doivent suivre [le contrat du manifeste](contrat_manifeste.yaml), vu avec les vraies données. Les manifestes de référence actuels de `curated/` ont encore l'ancien format : en cas d'écart, c'est le contrat qui compte.
+
 ## Où on en est
 
 **Disponible dans le bucket :** les zips (`raw/`), une version de référence des données prêtes (`curated/`), des empreintes et des propositions (`derived/`).

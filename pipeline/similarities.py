@@ -10,14 +10,30 @@ from demo.propositions import NEAR_IDENTICAL, SIDES, latest, load, rank
 
 # CONSTANTES
 DATA = Path("data")
-COLUMNS = ["livraison", "individu", "cote", "fichier_origine", "rang", "score_premier", "score_bon", "score_premier_faux"]
+COLUMNS = [
+    "livraison",
+    "individu",
+    "cote",
+    "fichier_origine",
+    "rang",
+    "score_premier",
+    "score_bon",
+    "score_premier_faux",
+]
 
 
 # 1. Les photos de l'historique qu'on peut noter : leur côté est au catalogue, et ce n'est pas la même photo
 def findable(photo, embedding, catalogue, catalogue_embeddings) -> bool:
-    same = [line for line, other in enumerate(catalogue)
-            if other["individu"] == photo["individu"] and other["cote"] == photo["cote"]]
-    return photo["cote"] in SIDES and bool(same) and not (catalogue_embeddings[same] @ embedding >= NEAR_IDENTICAL).all()
+    same = [
+        line
+        for line, other in enumerate(catalogue)
+        if other["individu"] == photo["individu"] and other["cote"] == photo["cote"]
+    ]
+    return (
+        photo["cote"] in SIDES
+        and bool(same)
+        and not (catalogue_embeddings[same] @ embedding >= NEAR_IDENTICAL).all()
+    )
 
 
 # 2. Chaque photo cherchée dans le catalogue, comme dans la démo
@@ -32,17 +48,31 @@ def score_photos(data: Path) -> list[dict]:
         for line, photo in enumerate(photos):
             if not findable(photo, embeddings[line], catalogue, catalogue_embeddings):
                 continue
-            candidates, _ = rank([photo], embeddings[[line]], catalogue, catalogue_embeddings)
+            candidates, _ = rank(
+                [photo], embeddings[[line]], catalogue, catalogue_embeddings
+            )
             names = [candidate["individu"] for candidate in candidates]
-            position = names.index(photo["individu"]) if photo["individu"] in names else None
-            rows.append({
-                "livraison": folder.name, "individu": photo["individu"], "cote": photo["cote"],
-                "fichier_origine": photo["fichier_origine"],
-                "rang": position + 1 if position is not None else "",
-                "score_premier": candidates[0]["score"],
-                "score_bon": candidates[position]["score"] if position is not None else "",
-                "score_premier_faux": next(c["score"] for c in candidates if c["individu"] != photo["individu"]),
-            })
+            position = (
+                names.index(photo["individu"]) if photo["individu"] in names else None
+            )
+            rows.append(
+                {
+                    "livraison": folder.name,
+                    "individu": photo["individu"],
+                    "cote": photo["cote"],
+                    "fichier_origine": photo["fichier_origine"],
+                    "rang": position + 1 if position is not None else "",
+                    "score_premier": candidates[0]["score"],
+                    "score_bon": candidates[position]["score"]
+                    if position is not None
+                    else "",
+                    "score_premier_faux": next(
+                        c["score"]
+                        for c in candidates
+                        if c["individu"] != photo["individu"]
+                    ),
+                }
+            )
     return rows
 
 
@@ -77,10 +107,26 @@ def plot(rows: list[dict], output: Path) -> None:
     threshold, kept, flagged = best_threshold(rows)
 
     fig, ax = plt.subplots(figsize=(9, 3.6))
-    ax.hist(known, bins=bins, alpha=0.6, color="#2e7d32", label="dauphin connu : score du premier candidat")
-    ax.hist(new, bins=bins, alpha=0.6, color="#c62828", label="dauphin nouveau (simulé) : meilleur score sans lui")
-    ax.axvline(threshold, color="black", linestyle="--",
-               label=f"seuil {threshold:.2f} : {kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés")
+    ax.hist(
+        known,
+        bins=bins,
+        alpha=0.6,
+        color="#2e7d32",
+        label="dauphin connu : score du premier candidat",
+    )
+    ax.hist(
+        new,
+        bins=bins,
+        alpha=0.6,
+        color="#c62828",
+        label="dauphin nouveau (simulé) : meilleur score sans lui",
+    )
+    ax.axvline(
+        threshold,
+        color="black",
+        linestyle="--",
+        label=f"seuil {threshold:.2f} : {kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés",
+    )
     ax.set_title(f"Scores sur l'historique · top-1 {top_k(rows)['top-1']:.0%}")
     ax.set_xlabel("score")
     ax.set_ylabel("photos")
@@ -102,8 +148,12 @@ def run(data: Path = DATA) -> Path:
 
     scores = top_k(rows)
     threshold, kept, flagged = best_threshold(rows)
-    print(f"{len(rows)} photos · top-1 {scores['top-1']:.0%} · top-5 {scores['top-5']:.0%} · top-10 {scores['top-10']:.0%}")
-    print(f"Seuil « nouveau » : {threshold:.2f} ({kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés)")
+    print(
+        f"{len(rows)} photos · top-1 {scores['top-1']:.0%} · top-5 {scores['top-5']:.0%} · top-10 {scores['top-10']:.0%}"
+    )
+    print(
+        f"Seuil « nouveau » : {threshold:.2f} ({kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés)"
+    )
 
     plot(rows, output / "distribution.png")
     return output
@@ -111,6 +161,10 @@ def run(data: Path = DATA) -> Path:
 
 # uv run --group notebook python -m pipeline.similarities
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Trace la distribution des scores sur l'historique, pour choisir un seuil.")
-    parser.add_argument("--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})")
+    parser = argparse.ArgumentParser(
+        description="Trace la distribution des scores sur l'historique, pour choisir un seuil."
+    )
+    parser.add_argument(
+        "--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})"
+    )
     print(f"Résultats : {run(parser.parse_args().data)}")

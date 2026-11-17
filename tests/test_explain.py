@@ -20,14 +20,20 @@ def fake_embedder():
         def forward(self, x):
             return self.conv(x)[..., :8, :8].mean(dim=(2, 3))
 
-    preprocessing = lambda image: torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255  # noqa: E731
-    return SimpleNamespace(network=TopLeft().eval(), device="cpu", preprocessing=preprocessing)
+    preprocessing = lambda image: (
+        torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255
+    )  # noqa: E731
+    return SimpleNamespace(
+        network=TopLeft().eval(), device="cpu", preprocessing=preprocessing
+    )
 
 
 def photo(seed):
     from PIL import Image
 
-    return Image.fromarray(np.random.default_rng(seed).integers(0, 255, (16, 16, 3), dtype=np.uint8))
+    return Image.fromarray(
+        np.random.default_rng(seed).integers(0, 255, (16, 16, 3), dtype=np.uint8)
+    )
 
 
 def test_occlusion_points_at_the_squares_the_model_looks_at():
@@ -56,8 +62,12 @@ def test_deletion_curve_goes_from_the_score_to_everything_hidden():
 
     x, y = explain.to_tensor(embedder, photo(0)), explain.to_tensor(embedder, photo(1))
     reference = explain.embed(embedder, y)[0]
-    curve = explain.deletion_curve(embedder, x, reference, np.ones((2, 2)), grid=4, steps=4)
-    assert curve["carte"][0] == pytest.approx(float(explain.embed(embedder, x)[0] @ reference), abs=1e-5)
+    curve = explain.deletion_curve(
+        embedder, x, reference, np.ones((2, 2)), grid=4, steps=4
+    )
+    assert curve["carte"][0] == pytest.approx(
+        float(explain.embed(embedder, x)[0] @ reference), abs=1e-5
+    )
     assert curve["carte"][-1] == pytest.approx(curve["hasard"][-1], abs=1e-5)
 
 
@@ -89,11 +99,22 @@ def test_explain_reciprocal_gives_only_the_links():
 
 
 def test_known_pairs_are_two_photos_of_the_same_dolphin_and_side():
-    photos = [{"individu": individual, "cote": side, "fichier_origine": f"{individual}{side}{number}.jpg"}
-              for individual in ("a", "b") for side in ("D", "G") for number in range(3)]
+    photos = [
+        {
+            "individu": individual,
+            "cote": side,
+            "fichier_origine": f"{individual}{side}{number}.jpg",
+        }
+        for individual in ("a", "b")
+        for side in ("D", "G")
+        for number in range(3)
+    ]
     photos.append({"individu": "c", "cote": "D", "fichier_origine": "seule.jpg"})
 
     pairs = known_pairs(photos, count=10)
     assert len(pairs) == 4  # c n'a qu'une photo
-    assert all(a["individu"] == b["individu"] and a["cote"] == b["cote"] and a is not b for a, b in pairs)
+    assert all(
+        a["individu"] == b["individu"] and a["cote"] == b["cote"] and a is not b
+        for a, b in pairs
+    )
     assert pairs == known_pairs(photos, count=10)

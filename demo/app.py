@@ -21,8 +21,10 @@ BUCKET = connect()
 for kind in ("catalogue", "best_of"):
     BUCKET.pull(CACHE, prefix=f"derived/embeddings/{kind}/")
     if not (CACHE / "derived" / "embeddings" / kind).exists():
-        raise SystemExit(f"Le bucket {BUCKET.name} n'a pas d'empreintes pour {kind} (derived/embeddings/{kind}/) : "
-                         "les y déposer avant de relancer la démo")
+        raise SystemExit(
+            f"Le bucket {BUCKET.name} n'a pas d'empreintes pour {kind} (derived/embeddings/{kind}/) : "
+            "les y déposer avant de relancer la démo"
+        )
 
 
 def fetch(path: str) -> str:
@@ -56,12 +58,18 @@ def individual_photos(individual: str) -> list[tuple[str, str]]:
 # 2. Ses candidats, droite puis gauche
 def candidate_photos(individual: str) -> list[tuple[str, str]]:
     images = []
-    for rank, candidate in enumerate(PROPOSITIONS[individual]["candidats"][:SHOWN], start=1):
+    for rank, candidate in enumerate(
+        PROPOSITIONS[individual]["candidats"][:SHOWN], start=1
+    ):
         for side, side_name in SIDES.items():
             path = CATALOGUE_PHOTOS.get((candidate["individu"], side))
             score = f"{candidate[side]:.2f}" if side in candidate else "–"
             name = f"{rank}. {candidate['individu']} · score {candidate['score']:.2f}"
-            images.append((fetch(path), f"{name} · {side_name} {score}") if path else (str(MISSING), f"{name} · pas de photo {side_name}"))
+            images.append(
+                (fetch(path), f"{name} · {side_name} {score}")
+                if path
+                else (str(MISSING), f"{name} · pas de photo {side_name}")
+            )
     return images
 
 
@@ -69,10 +77,14 @@ def candidate_photos(individual: str) -> list[tuple[str, str]]:
 def catalogue_page(page: int) -> tuple[list[tuple[str, str]], str, int]:
     page = max(1, min(int(page), PAGES))
     images = []
-    for name in DOLPHINS_LIST[(page - 1) * PAGE:page * PAGE]:
+    for name in DOLPHINS_LIST[(page - 1) * PAGE : page * PAGE]:
         for side, side_name in SIDES.items():
             path = CATALOGUE_PHOTOS.get((name, side))
-            images.append((fetch(path), f"{name} · {side_name}") if path else (str(MISSING), f"{name} · pas de photo {side_name}"))
+            images.append(
+                (fetch(path), f"{name} · {side_name}")
+                if path
+                else (str(MISSING), f"{name} · pas de photo {side_name}")
+            )
     return images, f"Page {page} / {PAGES}", page
 
 
@@ -81,20 +93,36 @@ def show(individual: str):
 
 
 with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
-    gr.Markdown(f"# Cétolog · best-of ➜ catalogue\n"
-                f"Chaque individu provisoire du best-of `{BEST_OF}` ({len(PROPOSITIONS)} individus) "
-                f"est cherché par CetaceaNet dans le catalogue `{CATALOGUE}` ({DOLPHINS} dauphins).")
+    gr.Markdown(
+        f"# Cétolog · best-of ➜ catalogue\n"
+        f"Chaque individu provisoire du best-of `{BEST_OF}` ({len(PROPOSITIONS)} individus) "
+        f"est cherché par CetaceaNet dans le catalogue `{CATALOGUE}` ({DOLPHINS} dauphins)."
+    )
 
     first = next(iter(PROPOSITIONS))
     with gr.Row():
         with gr.Column(scale=2):
-            individual = gr.Dropdown(list(PROPOSITIONS), value=first, label="Individu provisoire")
-            photos = gr.Gallery(individual_photos(first), label="Ses photos dans le best-of", columns=3, height=520,
-                                object_fit="contain")
+            individual = gr.Dropdown(
+                list(PROPOSITIONS), value=first, label="Individu provisoire"
+            )
+            photos = gr.Gallery(
+                individual_photos(first),
+                label="Ses photos dans le best-of",
+                columns=3,
+                height=520,
+                object_fit="contain",
+            )
         with gr.Column(scale=3):
-            candidates = gr.Gallery(candidate_photos(first), label=f"Les {SHOWN} dauphins du catalogue les plus ressemblants",
-                                    columns=2, height=900, object_fit="contain")
-            gr.Markdown("**Score** : le meilleur cosinus entre les empreintes des dorsales, tous côtés confondus. ")
+            candidates = gr.Gallery(
+                candidate_photos(first),
+                label=f"Les {SHOWN} dauphins du catalogue les plus ressemblants",
+                columns=2,
+                height=900,
+                object_fit="contain",
+            )
+            gr.Markdown(
+                "**Score** : le meilleur cosinus entre les empreintes des dorsales, tous côtés confondus. "
+            )
 
     explanations.panel(individual, PROPOSITIONS, CATALOGUE_PHOTOS, fetch, SHOWN)
 
@@ -104,12 +132,18 @@ with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
             previous = gr.Button("Précédent")
             position = gr.Markdown(f"Page 1 / {PAGES}")
             following = gr.Button("Suivant")
-        browser = gr.Gallery(label="Catalogue", columns=4, height=900, object_fit="contain")
+        browser = gr.Gallery(
+            label="Catalogue", columns=4, height=900, object_fit="contain"
+        )
 
     individual.change(show, individual, [photos, candidates])
     demo.load(catalogue_page, page, [browser, position, page])
-    previous.click(lambda current: catalogue_page(current - 1), page, [browser, position, page])
-    following.click(lambda current: catalogue_page(current + 1), page, [browser, position, page])
+    previous.click(
+        lambda current: catalogue_page(current - 1), page, [browser, position, page]
+    )
+    following.click(
+        lambda current: catalogue_page(current + 1), page, [browser, position, page]
+    )
 
 
 # Mot de passe si DEMO_PASSWORD est défini

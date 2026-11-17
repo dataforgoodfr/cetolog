@@ -28,7 +28,9 @@ def pick_device() -> str:
 class Embedder:
     def __init__(self, name: str = "cetaceanet"):
         if name not in MODELS:
-            raise ValueError(f"Modèle inconnu : {name}. Modèles disponibles : {', '.join(MODELS)}")
+            raise ValueError(
+                f"Modèle inconnu : {name}. Modèles disponibles : {', '.join(MODELS)}"
+            )
         build_network, self.preprocessing = MODELS[name]
         self.name = name
         self.device = pick_device()
@@ -36,12 +38,19 @@ class Embedder:
 
     # Vecteurs de norme 1 : cosinus = produit scalaire
     @torch.no_grad()
-    def embed(self, images: list[str | Path | Image.Image], batch_size: int = 8) -> np.ndarray:
+    def embed(
+        self, images: list[str | Path | Image.Image], batch_size: int = 8
+    ) -> np.ndarray:
         batches = []
         for start in range(0, len(images), batch_size):
             # Sans rotation EXIF
-            opened = [image if isinstance(image, Image.Image) else Image.open(image) for image in images[start:start + batch_size]]
-            tensors = torch.stack([self.preprocessing(image.convert("RGB")) for image in opened]).to(self.device)            
+            opened = [
+                image if isinstance(image, Image.Image) else Image.open(image)
+                for image in images[start : start + batch_size]
+            ]
+            tensors = torch.stack(
+                [self.preprocessing(image.convert("RGB")) for image in opened]
+            ).to(self.device)
             # Moyenne de la photo et de son miroir
             plain = F.normalize(self.network(tensors).float(), dim=1)
             mirrored = F.normalize(self.network(tensors.flip(-1)).float(), dim=1)

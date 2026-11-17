@@ -66,8 +66,12 @@ from PIL import Image
 from dorsalmatch import Embedder
 from dorsalmatch.explain import explain
 
-result = explain(Embedder("cetaceanet"), Image.open("a.jpg"), Image.open("b.jpg"), "occlusion")
-result["requete"].save("carte_a.jpg")  # aussi : candidat, liens, suppression, aire_carte, aire_hasard
+result = explain(
+    Embedder("cetaceanet"), Image.open("a.jpg"), Image.open("b.jpg"), "occlusion"
+)
+result["requete"].save(
+    "carte_a.jpg"
+)  # aussi : candidat, liens, suppression, aire_carte, aire_hasard
 ```
 
 **Revue en équipe** : 25 paires connues de l'historique (deux photos du même dauphin, du même côté), une image par paire et un `resume.csv` dans `data/derived/explications/` :

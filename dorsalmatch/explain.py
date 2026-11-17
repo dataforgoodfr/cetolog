@@ -28,10 +28,16 @@ def embed(embedder, tensors: torch.Tensor) -> torch.Tensor:
 
 
 # Cosinus avec reference quand chaque masque (grille de 0 et 1) est mis à zéro, c'est-à-dire au gris moyen
-def masked_cosines(embedder, x, masks: torch.Tensor, reference: torch.Tensor, batch_size: int = 8) -> torch.Tensor:
+def masked_cosines(
+    embedder, x, masks: torch.Tensor, reference: torch.Tensor, batch_size: int = 8
+) -> torch.Tensor:
     cosines = []
     for start in range(0, len(masks), batch_size):
-        hidden = F.interpolate(masks[start:start + batch_size, None].float(), size=x.shape[-2:], mode="nearest")
+        hidden = F.interpolate(
+            masks[start : start + batch_size, None].float(),
+            size=x.shape[-2:],
+            mode="nearest",
+        )
         cosines.append(embed(embedder, x * (1 - hidden)) @ reference)
     return torch.cat(cosines)
 
@@ -40,7 +46,9 @@ def masked_cosines(embedder, x, masks: torch.Tensor, reference: torch.Tensor, ba
 def occlusion(embedder, x, reference, grid: int = GRID) -> np.ndarray:
     one_square_each = torch.eye(grid * grid, device=x.device).reshape(-1, grid, grid)
     nothing = torch.zeros(1, grid, grid, device=x.device)
-    drop = masked_cosines(embedder, x, nothing, reference) - masked_cosines(embedder, x, one_square_each, reference)
+    drop = masked_cosines(embedder, x, nothing, reference) - masked_cosines(
+        embedder, x, one_square_each, reference
+    )
     return drop.clamp(min=0).reshape(grid, grid).cpu().numpy()
 
 
@@ -76,43 +84,80 @@ METHODS = {"occlusion": occlusion, "gradcam": grad_cam}
 
 # 3. Courbe de suppression : le cosinus quand on cache les zones les plus importantes d'abord, puis au hasard
 # Une carte fidèle fait chuter le cosinus plus vite que le hasard
-def deletion_curve(embedder, x, reference, heatmap: np.ndarray, grid: int = DELETION_GRID,
-                   steps: int = DELETION_STEPS, seed: int = 0) -> dict[str, np.ndarray]:
-    squares = F.interpolate(torch.as_tensor(heatmap)[None, None].float(), size=(grid, grid), mode="area").flatten()
-    orders = {"carte": squares.argsort(descending=True),
-              "hasard": torch.randperm(grid * grid, generator=torch.Generator().manual_seed(seed))}
+def deletion_curve(
+    embedder,
+    x,
+    reference,
+    heatmap: np.ndarray,
+    grid: int = DELETION_GRID,
+    steps: int = DELETION_STEPS,
+    seed: int = 0,
+) -> dict[str, np.ndarray]:
+    squares = F.interpolate(
+        torch.as_tensor(heatmap)[None, None].float(), size=(grid, grid), mode="area"
+    ).flatten()
+    orders = {
+        "carte": squares.argsort(descending=True),
+        "hasard": torch.randperm(
+            grid * grid, generator=torch.Generator().manual_seed(seed)
+        ),
+    }
     fractions = np.linspace(0, 1, steps + 1)
 
     curves = {"fraction": fractions}
     for name, order in orders.items():
         masks = torch.zeros(steps + 1, grid * grid)
         for step, fraction in enumerate(fractions):
-            masks[step, order[:round(fraction * grid * grid)]] = 1
-        curves[name] = masked_cosines(embedder, x, masks.reshape(-1, grid, grid).to(x.device), reference).cpu().numpy()
+            masks[step, order[: round(fraction * grid * grid)]] = 1
+        curves[name] = (
+            masked_cosines(
+                embedder, x, masks.reshape(-1, grid, grid).to(x.device), reference
+            )
+            .cpu()
+            .numpy()
+        )
     return curves
 
 
 # 4. Zones réciproques : chaque zone de a et sa plus proche dans b, gardée si b la désigne en retour
 @torch.no_grad()
-def reciprocal_matches(embedder, x, y, links: int = LINKS) -> list[tuple[tuple[float, float], tuple[float, float], float]]:
+def reciprocal_matches(
+    embedder, x, y, links: int = LINKS
+) -> list[tuple[tuple[float, float], tuple[float, float], float]]:
     maps = [last_feature_map(embedder.network, tensor)[1][0] for tensor in (x, y)]
-    (height_a, width_a), (height_b, width_b) = (feature_map.shape[-2:] for feature_map in maps)
+    (height_a, width_a), (height_b, width_b) = (
+        feature_map.shape[-2:] for feature_map in maps
+    )
     a, b = (feature_map.flatten(1).T.float() for feature_map in maps)  # (zones, C)
-    kept_a, kept_b = (zones.norm(dim=1) >= zones.norm(dim=1).quantile(FOCUS) for zones in (a, b))
+    kept_a, kept_b = (
+        zones.norm(dim=1) >= zones.norm(dim=1).quantile(FOCUS) for zones in (a, b)
+    )
 
     similarity = F.normalize(a, dim=1) @ F.normalize(b, dim=1).T
     similarity[~kept_a] = -2
     similarity[:, ~kept_b] = -2
     best_in_b, best_in_a = similarity.argmax(dim=1), similarity.argmax(dim=0)
-    mutual = ((best_in_a[best_in_b] == torch.arange(len(a), device=a.device)) & kept_a).nonzero().flatten()
-    mutual = mutual[similarity[mutual, best_in_b[mutual]].argsort(descending=True)][:links]
+    mutual = (
+        ((best_in_a[best_in_b] == torch.arange(len(a), device=a.device)) & kept_a)
+        .nonzero()
+        .flatten()
+    )
+    mutual = mutual[similarity[mutual, best_in_b[mutual]].argsort(descending=True)][
+        :links
+    ]
 
     # Centre de chaque zone, en fraction de la largeur et de la hauteur
     def center(index: int, height: int, width: int) -> tuple[float, float]:
         return ((index % width + 0.5) / width, (index // width + 0.5) / height)
 
-    return [(center(int(i), height_a, width_a), center(int(best_in_b[i]), height_b, width_b), float(similarity[i, best_in_b[i]]))
-            for i in mutual]
+    return [
+        (
+            center(int(i), height_a, width_a),
+            center(int(best_in_b[i]), height_b, width_b),
+            float(similarity[i, best_in_b[i]]),
+        )
+        for i in mutual
+    ]
 
 
 # Carte superposée à la photo : rouge = compte beaucoup
@@ -120,7 +165,12 @@ def overlay(image: Image.Image, heatmap: np.ndarray, alpha: float = 0.6) -> Imag
     image = image.convert("RGB")
     heat = np.asarray(heatmap, dtype=float)
     heat = heat / heat.max() if heat.max() > 0 else heat
-    heat = np.asarray(Image.fromarray(np.uint8(255 * heat)).resize(image.size, Image.BILINEAR)) / 255
+    heat = (
+        np.asarray(
+            Image.fromarray(np.uint8(255 * heat)).resize(image.size, Image.BILINEAR)
+        )
+        / 255
+    )
     red = np.zeros((*heat.shape, 3))
     red[..., 0] = 255
     weight = alpha * heat[..., None]
@@ -129,7 +179,12 @@ def overlay(image: Image.Image, heatmap: np.ndarray, alpha: float = 0.6) -> Imag
 
 # Les photos à la même hauteur, côte à côte
 def side_by_side(images: list[Image.Image], height: int = HEIGHT) -> Image.Image:
-    resized = [image.convert("RGB").resize((round(image.width * height / image.height), height)) for image in images]
+    resized = [
+        image.convert("RGB").resize(
+            (round(image.width * height / image.height), height)
+        )
+        for image in images
+    ]
     canvas = Image.new("RGB", (sum(image.width for image in resized), height), "white")
     left = 0
     for image in resized:
@@ -139,7 +194,9 @@ def side_by_side(images: list[Image.Image], height: int = HEIGHT) -> Image.Image
 
 
 # Les liens réciproques tracés entre les deux photos
-def draw_links(a: Image.Image, b: Image.Image, matches, height: int = HEIGHT) -> Image.Image:
+def draw_links(
+    a: Image.Image, b: Image.Image, matches, height: int = HEIGHT
+) -> Image.Image:
     canvas = side_by_side([a, b], height)
     width_a = round(a.width * height / a.height)
     width_b = canvas.width - width_a
@@ -154,7 +211,13 @@ def draw_links(a: Image.Image, b: Image.Image, matches, height: int = HEIGHT) ->
 
 # Tout pour une paire : liens réciproques, cartes des deux photos (sauf method="reciprocal"),
 # et si demandé la courbe de suppression (la plus lente)
-def explain(embedder, query: Image.Image, candidate: Image.Image, method: str = "occlusion", curve: bool = True) -> dict:
+def explain(
+    embedder,
+    query: Image.Image,
+    candidate: Image.Image,
+    method: str = "occlusion",
+    curve: bool = True,
+) -> dict:
     x, y = to_tensor(embedder, query), to_tensor(embedder, candidate)
     query_embedding, candidate_embedding = embed(embedder, torch.cat([x, y]))
     result = {
@@ -166,9 +229,15 @@ def explain(embedder, query: Image.Image, candidate: Image.Image, method: str = 
 
     query_map = METHODS[method](embedder, x, candidate_embedding)
     result["requete"] = overlay(query, query_map)
-    result["candidat"] = overlay(candidate, METHODS[method](embedder, y, query_embedding))
+    result["candidat"] = overlay(
+        candidate, METHODS[method](embedder, y, query_embedding)
+    )
     if curve:
         points = deletion_curve(embedder, x, candidate_embedding, query_map)
         # Aire sous la courbe : plus elle est basse par rapport au hasard, plus la carte est fidèle
-        result.update(suppression=points, aire_carte=float(points["carte"].mean()), aire_hasard=float(points["hasard"].mean()))
+        result.update(
+            suppression=points,
+            aire_carte=float(points["carte"].mean()),
+            aire_hasard=float(points["hasard"].mean()),
+        )
     return result

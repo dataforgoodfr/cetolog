@@ -73,7 +73,9 @@ from pipeline.storage import connect
 
 bucket = connect()  # lit .env
 bucket.list_keys("curated/historique/")  # les fichiers sous ce préfixe
-bucket.download("curated/historique/manifests/2026-10-29_miraceti.csv", "historique.csv")
+bucket.download(
+    "curated/historique/manifests/2026-10-29_miraceti.csv", "historique.csv"
+)
 ```
 
 ## 4. Envoyer des données dans le bucket

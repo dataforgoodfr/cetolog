@@ -40,6 +40,28 @@ pipeline = [
 [tool.uv]
 default-groups = ["dev", "pipeline"]
 
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # tri des imports
+    "UP",      # syntaxe moderne (py312)
+    "B",       # bugbear
+    "SIM",     # simplifications
+    "C4",      # compréhensions
+    "PIE",
+    "RET",
+    "NPY",     # numpy
+    "PT",      # style pytest
+    "RUF",
+]
+# Typographie française des textes et commentaires : tiret demi-cadratin, apostrophe, espace insécable.
+allowed-confusables = ["–", "’", " "]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

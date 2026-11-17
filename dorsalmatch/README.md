@@ -18,7 +18,7 @@ embedder = dorsalmatch.Embedder("cetaceanet")
 catalogue = embedder.embed(["a.jpg", "b.jpg"])  # une ligne par photo
 query = embedder.embed(["nouvelle.jpg"])
 
-dorsalmatch.search(query, catalogue, k=2)       # [[[indice, cosinus], [indice, cosinus]]]
+dorsalmatch.search(query, catalogue, k=2)  # [[[indice, cosinus], [indice, cosinus]]]
 ```
 
 | Fonction | Rôle |

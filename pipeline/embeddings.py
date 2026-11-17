@@ -52,20 +52,31 @@ def embed_delivery(embedder, model: str, manifest: Path, kind: str, data: Path) 
 
 
 # 3. Toutes les livraisons, modèle par modèle
-def run(models: list[str] = MODELS, data: Path = DATA, kinds: tuple[str, ...] = KINDS) -> None:
+def run(
+    models: list[str] = MODELS, data: Path = DATA, kinds: tuple[str, ...] = KINDS
+) -> None:
     from dorsalmatch import Embedder
 
     for model in models:
         embedder = Embedder(model)
         for kind in kinds:
-            for manifest in sorted((data / "curated" / kind / "manifests").glob("*.csv")):
+            for manifest in sorted(
+                (data / "curated" / kind / "manifests").glob("*.csv")
+            ):
                 embed_delivery(embedder, model, manifest, kind, data)
 
 
 # 4. La ligne de commande
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Calcule les empreintes des photos, modèle par modèle.")
-    parser.add_argument("models", nargs="*", default=MODELS, help=f"modèles à utiliser (défaut : {' '.join(MODELS)})")
+    parser = argparse.ArgumentParser(
+        description="Calcule les empreintes des photos, modèle par modèle."
+    )
+    parser.add_argument(
+        "models",
+        nargs="*",
+        default=MODELS,
+        help=f"modèles à utiliser (défaut : {' '.join(MODELS)})",
+    )
     parser.add_argument(
         "--kinds",
         nargs="+",
@@ -73,7 +84,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=KINDS,
         help=f"types de livraison à traiter (défaut : {' '.join(KINDS)})",
     )
-    parser.add_argument("--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})")
+    parser.add_argument(
+        "--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})"
+    )
     return parser.parse_args(argv)
 
 

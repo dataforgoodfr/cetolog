@@ -41,11 +41,7 @@ def test_check_refuses_an_unknown_bucket(bucket):
 
 # Méthodes du Bucket
 def test_upload_then_download(bucket, source, tmp_path):
-    bucket.upload(
-        source, 
-        "tests/essai.txt", 
-        {"sha256": "abc"}
-    )
+    bucket.upload(source, "tests/essai.txt", {"sha256": "abc"})
     bucket.download("tests/essai.txt", tmp_path / "copie.txt")
 
     assert (tmp_path / "copie.txt").read_text() == "cetolog"
@@ -76,7 +72,9 @@ def test_head_does_not_hide_other_errors():
 def test_pull_copies_raw_only(bucket, tmp_path):
     bucket.client.put_object(Bucket="test", Key="raw/observations/")
     bucket.client.put_object(Bucket="test", Key="raw/catalogue/a.zip", Body=b"zip")
-    bucket.client.put_object(Bucket="test", Key="curated/catalogue/manifests/a.csv", Body=b"csv")
+    bucket.client.put_object(
+        Bucket="test", Key="curated/catalogue/manifests/a.csv", Body=b"csv"
+    )
     bucket.pull(tmp_path)
 
     assert (tmp_path / "raw" / "catalogue" / "a.zip").read_bytes() == b"zip"
@@ -94,18 +92,27 @@ def test_pull_does_not_download_twice(bucket, tmp_path, capsys):
 
 
 def test_pull_another_folder(bucket, tmp_path):
-    bucket.client.put_object(Bucket="test", Key="derived/embeddings/catalogue/a/cetaceanet.npy", Body=b"npy")
+    bucket.client.put_object(
+        Bucket="test", Key="derived/embeddings/catalogue/a/cetaceanet.npy", Body=b"npy"
+    )
     bucket.client.put_object(Bucket="test", Key="raw/catalogue/a.zip", Body=b"zip")
     bucket.pull(tmp_path, prefix="derived/embeddings/")
 
-    assert (tmp_path / "derived" / "embeddings" / "catalogue" / "a" / "cetaceanet.npy").read_bytes() == b"npy"
+    assert (
+        tmp_path / "derived" / "embeddings" / "catalogue" / "a" / "cetaceanet.npy"
+    ).read_bytes() == b"npy"
     assert not (tmp_path / "raw").exists()
 
 
 # Fetch : téléchargé seulement s'il manque
 def test_fetch_downloads_a_missing_file(bucket, tmp_path):
-    bucket.client.put_object(Bucket="test", Key="curated/catalogue/photos/a/TUTR0001/photo.jpg", Body=b"jpg")
-    path = bucket.fetch(tmp_path / "curated" / "catalogue" / "photos" / "a" / "TUTR0001" / "photo.jpg", tmp_path)
+    bucket.client.put_object(
+        Bucket="test", Key="curated/catalogue/photos/a/TUTR0001/photo.jpg", Body=b"jpg"
+    )
+    path = bucket.fetch(
+        tmp_path / "curated" / "catalogue" / "photos" / "a" / "TUTR0001" / "photo.jpg",
+        tmp_path,
+    )
 
     assert path.read_bytes() == b"jpg"
 
@@ -120,14 +127,20 @@ def test_fetch_keeps_a_local_file(bucket, tmp_path):
 
 # Push : de data/curated/ et data/derived/embeddings/ au bucket
 PUSHED_KEYS = (
-    "curated/catalogue/photos/a/TUTR0025/photo.jpg", "curated/catalogue/manifests/a.csv",
-    "derived/embeddings/catalogue/a/photos.csv", "derived/embeddings/catalogue/a/cetaceanet.npy",
+    "curated/catalogue/photos/a/TUTR0025/photo.jpg",
+    "curated/catalogue/manifests/a.csv",
+    "derived/embeddings/catalogue/a/photos.csv",
+    "derived/embeddings/catalogue/a/cetaceanet.npy",
 )
 
 
 @pytest.fixture
 def data(tmp_path):
-    for key in (*PUSHED_KEYS, "raw/catalogue/a.zip", "curated/catalogue/photos/.DS_Store"):
+    for key in (
+        *PUSHED_KEYS,
+        "raw/catalogue/a.zip",
+        "curated/catalogue/photos/.DS_Store",
+    ):
         path = tmp_path / key
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("contenu")
@@ -145,7 +158,9 @@ def test_push_sends_photos_before_their_manifest(bucket, data):
     bucket.upload = lambda path, key, metadata=None: sent.append(key)
     bucket.push(data)
 
-    assert sent.index("curated/catalogue/photos/a/TUTR0025/photo.jpg") < sent.index("curated/catalogue/manifests/a.csv")
+    assert sent.index("curated/catalogue/photos/a/TUTR0025/photo.jpg") < sent.index(
+        "curated/catalogue/manifests/a.csv"
+    )
 
 
 def test_push_sends_nothing_the_second_time(bucket, data, capsys):

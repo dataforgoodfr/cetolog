@@ -35,7 +35,9 @@ def load(kind: str, delivery: str, data: Path = DATA) -> tuple[list[dict], np.nd
     photos = pd.read_csv(folder / "photos.csv", dtype=str, keep_default_na=False)
     photos["chemin"] = [
         str(data / "curated" / kind / "photos" / delivery / individual / name)
-        for individual, name in zip(photos["individu"], photos["fichier_origine"])
+        for individual, name in zip(
+            photos["individu"], photos["fichier_origine"], strict=True
+        )
     ]
     return photos.to_dict("records"), np.load(folder / f"{MODEL}.npy")
 
@@ -54,7 +56,8 @@ def by_number(name: str) -> int:
     return int(re.sub(r"\D", "", name) or 0)
 
 
-# 1. Toutes les photos de l'individu contre un côté du catalogue : le meilleur cosinus de chaque dauphin
+# 1. Toutes les photos de l'individu contre un côté du catalogue.
+# Le meilleur cosinus de chaque dauphin.
 def best_cosines(
     photos, embeddings, catalogue, catalogue_embeddings, side: str
 ) -> tuple[dict[str, float], set[str]]:
@@ -101,7 +104,8 @@ def rank(
             {"individu": individual, "score": float(max(scores.values())), **scores}
         )
 
-    # À score égal, par identifiant : le classement ne change pas d'un lancement à l'autre
+    # À score égal, par identifiant.
+    # Le classement ne change pas d'un lancement à l'autre.
     return sorted(
         candidates, key=lambda candidate: (-candidate["score"], candidate["individu"])
     ), identical

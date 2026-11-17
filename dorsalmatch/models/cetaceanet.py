@@ -47,6 +47,6 @@ class CetaceaNet(nn.Module):
         feature_maps = self.backbone(images)
         pooled = [
             pool(feature_map)
-            for feature_map, pool in zip(feature_maps, self.global_pools)
+            for feature_map, pool in zip(feature_maps, self.global_pools, strict=True)
         ]
         return self.neck(torch.cat(pooled, dim=1))

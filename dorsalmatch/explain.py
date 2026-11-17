@@ -10,7 +10,9 @@ GRID = 8  # occlusion : carrés par côté de la photo
 DELETION_GRID = 16  # courbe de suppression : carrés par côté
 DELETION_STEPS = 10
 LINKS = 20  # zones réciproques affichées
-FOCUS = 0.75  # zones réciproques : seul le quart le plus activé de chaque photo, sinon l'eau se relie à l'eau
+# Zones réciproques : seul le quart le plus activé de chaque photo.
+# Sinon l'eau se relie à l'eau.
+FOCUS = 0.75
 HEIGHT = 400  # hauteur des images côte à côte
 
 
@@ -27,7 +29,8 @@ def embed(embedder, tensors: torch.Tensor) -> torch.Tensor:
     return F.normalize(plain + mirrored, dim=1)
 
 
-# Cosinus avec reference quand chaque masque (grille de 0 et 1) est mis à zéro, c'est-à-dire au gris moyen
+# Cosinus avec reference quand chaque masque (grille de 0 et 1) est mis à zéro,
+# c'est-à-dire au gris moyen
 def masked_cosines(
     embedder, x, masks: torch.Tensor, reference: torch.Tensor, batch_size: int = 8
 ) -> torch.Tensor:
@@ -52,7 +55,8 @@ def occlusion(embedder, x, reference, grid: int = GRID) -> np.ndarray:
     return drop.clamp(min=0).reshape(grid, grid).cpu().numpy()
 
 
-# La dernière carte de caractéristiques (1, C, h, w) du réseau, avant le pooling, et l'empreinte
+# La dernière carte de caractéristiques (1, C, h, w) du réseau, avant le pooling,
+# et l'empreinte
 def last_feature_map(network, x) -> tuple[torch.Tensor, torch.Tensor]:
     found = {}
 
@@ -82,7 +86,8 @@ def grad_cam(embedder, x, reference) -> np.ndarray:
 METHODS = {"occlusion": occlusion, "gradcam": grad_cam}
 
 
-# 3. Courbe de suppression : le cosinus quand on cache les zones les plus importantes d'abord, puis au hasard
+# 3. Courbe de suppression : le cosinus quand on cache les zones les plus importantes
+# d'abord, puis au hasard
 # Une carte fidèle fait chuter le cosinus plus vite que le hasard
 def deletion_curve(
     embedder,
@@ -119,7 +124,8 @@ def deletion_curve(
     return curves
 
 
-# 4. Zones réciproques : chaque zone de a et sa plus proche dans b, gardée si b la désigne en retour
+# 4. Zones réciproques : chaque zone de a et sa plus proche dans b,
+# gardée si b la désigne en retour
 @torch.no_grad()
 def reciprocal_matches(
     embedder, x, y, links: int = LINKS
@@ -209,7 +215,8 @@ def draw_links(
     return canvas
 
 
-# Tout pour une paire : liens réciproques, cartes des deux photos (sauf method="reciprocal"),
+# Tout pour une paire : liens réciproques,
+# cartes des deux photos (sauf method="reciprocal"),
 # et si demandé la courbe de suppression (la plus lente)
 def explain(
     embedder,
@@ -234,7 +241,8 @@ def explain(
     )
     if curve:
         points = deletion_curve(embedder, x, candidate_embedding, query_map)
-        # Aire sous la courbe : plus elle est basse par rapport au hasard, plus la carte est fidèle
+        # Aire sous la courbe : plus elle est basse par rapport au hasard,
+        # plus la carte est fidèle
         result.update(
             suppression=points,
             aire_carte=float(points["carte"].mean()),

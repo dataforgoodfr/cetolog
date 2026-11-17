@@ -46,7 +46,8 @@ def test_embed_averages_the_photo_and_its_mirror():
         [x[..., :2].mean(dim=(1, 2, 3)), x[..., 2:].mean(dim=(1, 2, 3))], dim=1
     )
 
-    # Moitié gauche blanche, moitié droite noire : sans le miroir, l'empreinte vaudrait [1, 0]
+    # Moitié gauche blanche, moitié droite noire.
+    # Sans le miroir, l'empreinte vaudrait [1, 0].
     photo = Image.fromarray(
         np.array([[[255] * 3] * 2 + [[0] * 3] * 2] * 4, dtype=np.uint8)
     )
@@ -96,5 +97,8 @@ def test_pairs():
 
 
 def test_library_needs_neither_s3_nor_torch():
-    code = "import sys, dorsalmatch; sys.exit('boto3' in sys.modules or 'torch' in sys.modules)"
+    code = (
+        "import sys, dorsalmatch; "
+        "sys.exit('boto3' in sys.modules or 'torch' in sys.modules)"
+    )
     assert subprocess.run([sys.executable, "-c", code], check=False).returncode == 0

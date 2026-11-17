@@ -22,7 +22,8 @@ COLUMNS = [
 ]
 
 
-# 1. Les photos de l'historique qu'on peut noter : leur côté est au catalogue, et ce n'est pas la même photo
+# 1. Les photos de l'historique qu'on peut noter : leur côté est au catalogue,
+# et ce n'est pas la même photo
 def findable(photo, embedding, catalogue, catalogue_embeddings) -> bool:
     same = [
         line
@@ -38,7 +39,8 @@ def findable(photo, embedding, catalogue, catalogue_embeddings) -> bool:
 
 # 2. Chaque photo cherchée dans le catalogue, comme dans la démo
 # score_premier : ce que voit Miraceti pour un dauphin connu
-# score_premier_faux : le meilleur score sans le bon dauphin, ce que verrait Miraceti s'il était nouveau
+# score_premier_faux : le meilleur score sans le bon dauphin,
+# ce que verrait Miraceti s'il était nouveau
 def score_photos(data: Path) -> list[dict]:
     catalogue, catalogue_embeddings = load("catalogue", latest("catalogue", data), data)
 
@@ -82,7 +84,8 @@ def top_k(rows: list[dict]) -> dict[str, float]:
     return {f"top-{k}": float((ranks <= k).mean()) for k in (1, 5, 10)}
 
 
-# 4. Le seuil « probablement nouveau » : sous le seuil, le meilleur candidat ne ressemble pas assez
+# 4. Le seuil « probablement nouveau » : sous le seuil,
+# le meilleur candidat ne ressemble pas assez
 # Choisi pour équilibrer les dauphins connus gardés et les nouveaux repérés
 def best_threshold(rows: list[dict]) -> tuple[float, float, float]:
     known = np.array([row["score_premier"] for row in rows])
@@ -125,7 +128,8 @@ def plot(rows: list[dict], output: Path) -> None:
         threshold,
         color="black",
         linestyle="--",
-        label=f"seuil {threshold:.2f} : {kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés",
+        label=f"seuil {threshold:.2f} : {kept:.0%} des connus gardés, "
+        f"{flagged:.0%} des nouveaux repérés",
     )
     ax.set_title(f"Scores sur l'historique · top-1 {top_k(rows)['top-1']:.0%}")
     ax.set_xlabel("score")
@@ -149,10 +153,12 @@ def run(data: Path = DATA) -> Path:
     scores = top_k(rows)
     threshold, kept, flagged = best_threshold(rows)
     print(
-        f"{len(rows)} photos · top-1 {scores['top-1']:.0%} · top-5 {scores['top-5']:.0%} · top-10 {scores['top-10']:.0%}"
+        f"{len(rows)} photos · top-1 {scores['top-1']:.0%} · "
+        f"top-5 {scores['top-5']:.0%} · top-10 {scores['top-10']:.0%}"
     )
     print(
-        f"Seuil « nouveau » : {threshold:.2f} ({kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés)"
+        f"Seuil « nouveau » : {threshold:.2f} "
+        f"({kept:.0%} des connus gardés, {flagged:.0%} des nouveaux repérés)"
     )
 
     plot(rows, output / "distribution.png")
@@ -162,7 +168,8 @@ def run(data: Path = DATA) -> Path:
 # uv run --group notebook python -m pipeline.similarities
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Trace la distribution des scores sur l'historique, pour choisir un seuil."
+        description="Trace la distribution des scores sur l'historique, "
+        "pour choisir un seuil."
     )
     parser.add_argument(
         "--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})"

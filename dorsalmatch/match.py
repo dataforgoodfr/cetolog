@@ -9,9 +9,9 @@ def to_results(distances: np.ndarray, indices: np.ndarray) -> list[list[list]]:
     return [
         [
             [int(index), round(1 - float(distance), 3)]
-            for index, distance in zip(row_indices, row_distances)
+            for index, distance in zip(row_indices, row_distances, strict=True)
         ]
-        for row_indices, row_distances in zip(indices, distances)
+        for row_indices, row_distances in zip(indices, distances, strict=True)
     ]
 
 

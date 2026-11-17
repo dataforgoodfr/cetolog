@@ -13,7 +13,10 @@ from demo.propositions import MODEL
 METHODS = {
     "Occlusion : la plus fiable (environ 5 min sur CPU)": "occlusion",
     "Grad-CAM : rapide (moins d'une minute)": "gradcam",
-    "Zones réciproques : les zones qui se ressemblent d'une photo à l'autre (quelques secondes)": "reciprocal",
+    (
+        "Zones réciproques : les zones qui se ressemblent d'une photo à l'autre "
+        "(quelques secondes)"
+    ): "reciprocal",
 }
 OTHER_SIDE = {"D": "G", "G": "D"}
 # Sans PyTorch (image Docker de la démo), le panneau dit comment l'obtenir
@@ -58,11 +61,13 @@ def panel(
     shown: int,
 ) -> None:
     gr.Markdown(
-        "## Explicabilité du matching\nQuelles zones des photos expliquent qu'un candidat ressemble à l'individu ?"
+        "## Explicabilité du matching\n"
+        "Quelles zones des photos expliquent qu'un candidat ressemble à l'individu ?"
     )
     if not READY:
         gr.Markdown(
-            "Il faut PyTorch : relancer avec `uv run --group demo --group ml python -m demo.app`"
+            "Il faut PyTorch : relancer avec "
+            "`uv run --group demo --group ml python -m demo.app`"
         )
         return
 
@@ -81,8 +86,8 @@ def panel(
     )
     with_curve = gr.Checkbox(
         False,
-        label="Valider la carte par une courbe de suppression (environ 1 min de plus sur CPU, "
-        "sauf zones réciproques)",
+        label="Valider la carte par une courbe de suppression "
+        "(environ 1 min de plus sur CPU, sauf zones réciproques)",
     )
     button = gr.Button("Générer l'explicabilité", variant="primary")
 
@@ -99,7 +104,8 @@ def panel(
             visible=False,
         )
     links = gr.Image(
-        label="Zones réciproques : chaque zone désigne l'autre comme la plus ressemblante",
+        label="Zones réciproques : "
+        "chaque zone désigne l'autre comme la plus ressemblante",
         type="pil",
         visible=False,
     )
@@ -108,7 +114,8 @@ def panel(
         y="cosinus",
         color="ordre",
         visible=False,
-        label="Courbe de suppression : la carte doit faire chuter le cosinus plus vite que le hasard",
+        label="Courbe de suppression : "
+        "la carte doit faire chuter le cosinus plus vite que le hasard",
     )
 
     def run(individual: str, photo: int, rank: int, method: str, with_curve: bool):
@@ -135,7 +142,10 @@ def panel(
             with_curve,
         )
 
-        text = f"**{individual}** ➜ **{name}** (côté {side}) · cosinus entre ces deux photos **{result['cosinus']:.2f}**"
+        text = (
+            f"**{individual}** ➜ **{name}** (côté {side}) · "
+            f"cosinus entre ces deux photos **{result['cosinus']:.2f}**"
+        )
         table = None
         if with_curve:
             points = result["suppression"]
@@ -151,7 +161,8 @@ def panel(
                 ]
             )
             text += (
-                f" · aire sous la courbe : carte **{result['aire_carte']:.2f}**, hasard {result['aire_hasard']:.2f} "
+                f" · aire sous la courbe : carte **{result['aire_carte']:.2f}**, "
+                f"hasard {result['aire_hasard']:.2f} "
                 "(plus basse que le hasard : la carte est fidèle)"
             )
 

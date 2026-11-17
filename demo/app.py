@@ -22,7 +22,8 @@ for kind in ("catalogue", "best_of"):
     BUCKET.pull(CACHE, prefix=f"derived/embeddings/{kind}/")
     if not (CACHE / "derived" / "embeddings" / kind).exists():
         raise SystemExit(
-            f"Le bucket {BUCKET.name} n'a pas d'empreintes pour {kind} (derived/embeddings/{kind}/) : "
+            f"Le bucket {BUCKET.name} n'a pas d'empreintes pour {kind} "
+            f"(derived/embeddings/{kind}/) : "
             "les y déposer avant de relancer la démo"
         )
 
@@ -95,8 +96,10 @@ def show(individual: str):
 with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
     gr.Markdown(
         f"# Cétolog · best-of ➜ catalogue\n"
-        f"Chaque individu provisoire du best-of `{BEST_OF}` ({len(PROPOSITIONS)} individus) "
-        f"est cherché par CetaceaNet dans le catalogue `{CATALOGUE}` ({DOLPHINS} dauphins)."
+        f"Chaque individu provisoire du best-of `{BEST_OF}` "
+        f"({len(PROPOSITIONS)} individus) "
+        f"est cherché par CetaceaNet dans le catalogue `{CATALOGUE}` "
+        f"({DOLPHINS} dauphins)."
     )
 
     first = next(iter(PROPOSITIONS))
@@ -121,7 +124,8 @@ with gr.Blocks(title="Cétolog · démo", analytics_enabled=False) as demo:
                 object_fit="contain",
             )
             gr.Markdown(
-                "**Score** : le meilleur cosinus entre les empreintes des dorsales, tous côtés confondus. "
+                "**Score** : le meilleur cosinus entre les empreintes des dorsales, "
+                "tous côtés confondus. "
             )
 
     explanations.panel(individual, PROPOSITIONS, CATALOGUE_PHOTOS, fetch, SHOWN)

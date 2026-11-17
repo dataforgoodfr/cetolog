@@ -5,14 +5,14 @@ import os
 # GPU Apple : repli sur le CPU pour les opérations manquantes
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
-from pathlib import Path  # noqa: E402
+from pathlib import Path
 
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-import torch.nn.functional as F  # noqa: E402
-from PIL import Image  # noqa: E402
+import numpy as np
+import torch
+import torch.nn.functional as F
+from PIL import Image
 
-from dorsalmatch.models import MODELS  # noqa: E402
+from dorsalmatch.models import MODELS
 
 
 # Le GPU Apple si possible, sinon CUDA, sinon le CPU

@@ -6,7 +6,8 @@ import pytest
 from pipeline.explanations import known_pairs
 
 
-# Faux modèle : l'empreinte ne regarde que le quart en haut à gauche (et, avec le miroir, en haut à droite)
+# Faux modèle : l'empreinte ne regarde que le quart en haut à gauche
+# (et, avec le miroir, en haut à droite)
 def fake_embedder():
     torch = pytest.importorskip("torch")
     from torch import nn
@@ -20,9 +21,9 @@ def fake_embedder():
         def forward(self, x):
             return self.conv(x)[..., :8, :8].mean(dim=(2, 3))
 
-    preprocessing = lambda image: (
-        torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255
-    )  # noqa: E731
+    def preprocessing(image):
+        return torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255
+
     return SimpleNamespace(
         network=TopLeft().eval(), device="cpu", preprocessing=preprocessing
     )

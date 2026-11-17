@@ -91,7 +91,8 @@ def run(count: int = PAIRS, method: str = "occlusion", data: Path = DATA) -> Pat
 # uv run --group ml python -m pipeline.explanations --pairs 30 --method gradcam
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Explique des paires connues de l'historique, pour une revue en équipe."
+        description="Explique des paires connues de l'historique, "
+        "pour une revue en équipe."
     )
     parser.add_argument(
         "--pairs", type=int, default=PAIRS, help=f"nombre de paires (défaut : {PAIRS})"

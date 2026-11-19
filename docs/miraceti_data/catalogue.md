@@ -1,6 +1,6 @@
 # Le catalogue des données
 
-D'où viennent les données, comment elles sont rangées, et ce que contient chaque jeu. Les chiffres sont ceux du 10 novembre 2026.
+D'où viennent les données, comment elles sont rangées, et ce que contient chaque jeu. Les chiffres sont ceux du 10 novembre 2026 : les livraisons reçues depuis ne sont pas encore traitées.
 
 ## D'où viennent les données
 
@@ -12,12 +12,18 @@ Miraceti identifie chaque grand dauphin à sa **nageoire dorsale** : les encoche
 
 Les photos qu'on reçoit sont donc **déjà triées, retouchées et recadrées**. Miraceti les envoie en zip :
 
-| Reçu le | Zip | Ce que c'est | Jeu |
+| Reçu le | Fichier dans `raw/` | Ce qu'il contient | Jeu |
 |---|---|---|---|
-| 29 octobre 2026 | « Smash » | 50 dauphins déjà identifiés, rassemblés à la main, avec leurs photos de 2005 à 2025 | historique |
-| 6 novembre 2026 | « Catalogue Tt » | Le catalogue complet, exporté le 27 janvier 2026 | catalogue |
-| 6 novembre 2026 | « Bestof_20230307_Sete » | Le best-of d'une observation à Sète, le 7 mars 2023 | best_of, et historique pour 11 individus déjà au catalogue |
-| 10 novembre 2026 | « Shape Obs MIRACETI 2014-2026 » | Les observations de cétacés de 2013 à 2026 (le nom du zip dit 2014), en shapefile (QGIS) | observations |
+| 29 octobre 2026 | `historique/2026-10-29_miraceti.zip` (zip « Smash ») | 50 dauphins déjà identifiés, rassemblés à la main, avec leurs photos de 2005 à 2025 | historique |
+| 6 novembre 2026 | `catalogue/2026-11-06_catalogue_tt.zip` | Le catalogue complet, exporté le 27 janvier 2026 | catalogue |
+| 6 novembre 2026 | `best_of/2026-11-06_bestof_20230307_sete.zip` | Le best-of d'une observation à Sète, le 7 mars 2023 | best_of, et historique pour 11 individus déjà au catalogue |
+| 10 novembre 2026 | `observations/2026-11-10_shape_obs_miraceti_2014-2026.zip` | Les observations de cétacés de 2013 à 2026 (le nom dit 2014), en shapefile | observations |
+| 13 novembre 2026 | `best_of/Bestof_test.zip` | 9 best-of, du 15 mars au 26 juin 2024, chacun avec un `.xlsx` : 168 photos | best_of, pas encore traité |
+| 13 novembre 2026 | `best_of/Bestof_données traitées.zip` | 85 best-of, du 17 mars 2021 au 11 décembre 2023, dont Sète le 7 mars 2023, sans `.xlsx` : 10 413 fichiers | best_of, pas encore traité |
+| 19 novembre 2026 | `observations/2026-11-19_effort.zip` | L'effort et le taux d'effort, zone AMP07, 2023-2025 | observations |
+| 19 novembre 2026 | `observations/2026-11-19_taux_de_rencontre.zip` | Le taux de rencontre, zone AMP07, 2023-2025 | observations |
+
+Les deux zips du 13 novembre n'ont ni le même nommage ni la même structure de dossiers (point à stabiliser avec l'association).
 
 ## Le fonctionnement : iso-source → curated → derived
 
@@ -144,7 +150,33 @@ Shape Obs MIRACETI 2014-2026/
 
 **Confidentialité :** les positions sont précises. Rien de ce jeu ne sort du bucket sans l'accord de Miraceti.
 
-**Où :** `raw/observations/2026-11-10_shape_obs_miraceti_2014-2026.zip`. Rien encore dans `curated/` ni `derived/`.
+**L'effort et le taux de rencontre :** des shapefiles en Lambert 93, plus des cartes en `.jpeg`.
+
+```text
+2026-11-19_effort.zip
+└── Effort/
+    ├── Effort_AMP07_2023-2025.shp                 235 trajets : begin, end, long_km
+    └── Taux d'effort/
+        ├── AMP07_TE_2023-2025.shp                 873 mailles : long_km_su, surf_km², TE
+        ├── AMP07_TE_{hiver,printemps,été,automne}_2023-2025.shp
+        └── Cartes/                                 2 .jpeg
+
+2026-11-19_taux_de_rencontre.zip
+└── Taux de rencontre/
+    ├── Toutes espèces/
+    │   ├── AMP07_TR_2023-2025.shp                 873 mailles : TE, Observatio, TR
+    │   ├── AMP07_TR_{hiver,printemps,été,automne}_2023-2025.shp
+    │   └── Cartes et figures/                     2 .jpeg
+    └── Par espèce/
+        ├── Pm/AMP07_TR_Pm_{printemps,été,automne}_2023-2025.shp
+        ├── Sc/AMP07_TR_Sc_{toutessaisons,hiver,printemps,été,automne}_2023-2025.shp
+        ├── Tt/AMP07_TR_Tt_{toutessaisons,hiver}_2023-2025.shp
+        └── Cartes/                                 4 .jpeg
+```
+
+**Anomalies :** les accents des noms sont mal encodés dans les zips (« été », « espèce »). `AMP07_TR_Pm_été` et `AMP07_TR_Sc_été` ne se lisent pas telles quelles : un nom de colonne y est coupé au milieu d'un accent.
+
+**Où :** dans `raw/observations/`, `2026-11-10_shape_obs_miraceti_2014-2026.zip`, `2026-11-19_effort.zip` et `2026-11-19_taux_de_rencontre.zip`. Rien encore dans `curated/` ni `derived/` : [l'analyse spatiale](../../notebooks/analyse_V2.ipynb) lit directement le premier zip.
 
 ## Les fichiers de curated/ et derived/
 

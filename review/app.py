@@ -39,7 +39,7 @@ import fiftyone.brain as fob
 import fiftyone.core.odm as foo
 from fiftyone import ViewField as F
 
-DATASET = "cetolog-historique"
+DATASET = "cetolog"
 BRAIN_KEY = "cetaceanet"
 SIMILARITY_KEY = "similarite"
 ABSENT = 1_000_000
@@ -585,8 +585,8 @@ def rebuild(
     Returns
     -------
     fo.Dataset
-        Le dataset `cetolog-historique`, avec une vue groupée par cas,
-        l'index de similarité et la t-SNE.
+        Le dataset, avec une vue groupée par cas, l'index de similarité
+        et la t-SNE.
 
     Raises
     ------
@@ -648,8 +648,8 @@ def main() -> None:
 
     Charge les photos d'historique classées et leurs empreintes via
     `score_historical_photos`, puis charge le catalogue et ses empreintes.
-    Reconstruit le dataset FiftyOne `cetolog-historique` et affiche la vue
-    des photos hors du top 10.
+    Reconstruit le dataset FiftyOne et affiche la vue des photos hors
+    du top 10.
     """
     from demo.propositions import load
 

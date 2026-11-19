@@ -14,7 +14,7 @@ de review qualitative.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
 
@@ -31,9 +31,9 @@ HISTORY_DELIVERIES = (
 CATALOGUE_DELIVERY = "2026-11-06_catalogue_tt"
 
 
-class RankingOutcome(str, Enum):
+class RankingOutcome(StrEnum):
     """Classification du résultat du classement.
-    
+
     Trois catégories possibles : bien rangé (position 1), mal rangé dans
     le top (positions 2 à TOP), ou hors du top (position > TOP ou absent
     du classement).
@@ -133,9 +133,7 @@ def _load_history(
     embeddings = []
     for delivery in deliveries:
         delivery_photos, delivery_embeddings = load("historique", delivery, data)
-        photos += [
-            {**photo, "livraison": delivery} for photo in delivery_photos
-        ]
+        photos += [{**photo, "livraison": delivery} for photo in delivery_photos]
         embeddings.append(delivery_embeddings)
     return photos, np.vstack(embeddings)
 

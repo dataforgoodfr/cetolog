@@ -26,20 +26,16 @@ def add_delivery(
 ) -> None:
     folder = data / "derived" / "embeddings" / kind / delivery
     folder.mkdir(parents=True)
-    pd.DataFrame(
-        rows, columns=["individu", "cote", "fichier_origine"]
-    ).to_csv(folder / "photos.csv", index=False)
+    pd.DataFrame(rows, columns=["individu", "cote", "fichier_origine"]).to_csv(
+        folder / "photos.csv", index=False
+    )
     vectors = np.array(embeddings, dtype=float)
     norms = np.linalg.norm(vectors, axis=1, keepdims=True)
     np.save(folder / f"{MODEL}.npy", vectors / norms)
 
 
 def named(results: list[RankingResult], filename: str) -> RankingResult:
-    return next(
-        result
-        for result in results
-        if Path(result.filepath).name == filename
-    )
+    return next(result for result in results if Path(result.filepath).name == filename)
 
 
 def load_catalogue(data: Path, delivery: str) -> tuple[list[dict], np.ndarray]:
@@ -47,12 +43,12 @@ def load_catalogue(data: Path, delivery: str) -> tuple[list[dict], np.ndarray]:
     photos, embeddings = load("catalogue", delivery, data)
     sided = [
         (photo, embedding)
-        for photo, embedding in zip(photos, embeddings)
+        for photo, embedding in zip(photos, embeddings, strict=True)
         if photo.get("cote") and photo["cote"].strip()
     ]
     if not sided:
         return [], np.empty((0, embeddings.shape[1]))
-    photos, embeddings = zip(*sided)
+    photos, embeddings = zip(*sided, strict=True)
     return list(photos), np.array(embeddings)
 
 
@@ -149,7 +145,7 @@ def test_excludes_the_catalogue_photo_and_a_missing_side(
 ) -> None:
     ranking_results, vectors = score_historical_photos(excluded, ("h",), "c")
     names = {Path(result.filepath).name for result in ranking_results}
-    
+
     # Only "garde.jpg" should be kept. "meme.jpg" is the same catalogue photo,
     # and "absent.jpg" has a missing side in the catalogue
     assert names == {"garde.jpg"}
@@ -180,7 +176,6 @@ def test_rank_one_scores_and_catalogue_paths(ranked: Path) -> None:
 def test_confusion_uses_the_first_candidate_side(ranked: Path) -> None:
     ranking_results, _vectors = score_historical_photos(ranked, ("h",), "c")
     result = named(ranking_results, "confus.jpg")
-    root = ranked / "curated" / "catalogue" / "photos" / "c"
 
     assert result.ranking_outcome == RankingOutcome.TOP_MISRANKED
     assert result.match_rank == 2
@@ -272,37 +267,77 @@ def test_review_order_sorts_each_case() -> None:
 
     ranking_results = [
         RankingResult(
-            RankingOutcome.WELL_RANKED, 1, "D", "h", "premier",
-            0.9, 0.2, "/path/to/file1.jpg", []
+            RankingOutcome.WELL_RANKED,
+            1,
+            "D",
+            "h",
+            "premier",
+            0.9,
+            0.2,
+            "/path/to/file1.jpg",
+            [],
         ),
         RankingResult(
-            RankingOutcome.OUTSIDE_TOP, 30, "D", "h", "other",
-            0.5, 0.6, "/path/to/file2.jpg", []
+            RankingOutcome.OUTSIDE_TOP,
+            30,
+            "D",
+            "h",
+            "other",
+            0.5,
+            0.6,
+            "/path/to/file2.jpg",
+            [],
         ),
         RankingResult(
-            RankingOutcome.OUTSIDE_TOP, None, "D", "h", "other2",
-            None, 0.7, "/path/to/file3.jpg", []
+            RankingOutcome.OUTSIDE_TOP,
+            None,
+            "D",
+            "h",
+            "other2",
+            None,
+            0.7,
+            "/path/to/file3.jpg",
+            [],
         ),
         RankingResult(
-            RankingOutcome.TOP_MISRANKED, 2, "D", "h", "other3",
-            0.6, 0.65, "/path/to/file4.jpg", []
+            RankingOutcome.TOP_MISRANKED,
+            2,
+            "D",
+            "h",
+            "other3",
+            0.6,
+            0.65,
+            "/path/to/file4.jpg",
+            [],
         ),
         RankingResult(
-            RankingOutcome.WELL_RANKED, 1, "D", "h", "second",
-            0.95, 0.3, "/path/to/file5.jpg", []
+            RankingOutcome.WELL_RANKED,
+            1,
+            "D",
+            "h",
+            "second",
+            0.95,
+            0.3,
+            "/path/to/file5.jpg",
+            [],
         ),
         RankingResult(
-            RankingOutcome.TOP_MISRANKED, 8, "D", "h", "other4",
-            0.4, 0.5, "/path/to/file6.jpg", []
+            RankingOutcome.TOP_MISRANKED,
+            8,
+            "D",
+            "h",
+            "other4",
+            0.4,
+            0.5,
+            "/path/to/file6.jpg",
+            [],
         ),
     ]
     embeddings = np.eye(len(ranking_results))
 
     ordered, vectors = _order_results(ranking_results, embeddings)
 
-    assert [
-        (item.ranking_outcome, item.match_rank) for item in ordered
-    ] == [
+    assert [(item.ranking_outcome, item.match_rank) for item in ordered] == [
         (RankingOutcome.OUTSIDE_TOP, None),
         (RankingOutcome.OUTSIDE_TOP, 30),
         (RankingOutcome.TOP_MISRANKED, 8),
@@ -401,7 +436,9 @@ def test_case_view_groups_a_query_with_its_neighbours(
         ]
         # Verify that WELL_RANKED view groups results
         groups = list(
-            dataset.load_saved_view(RankingOutcome.WELL_RANKED.value).iter_dynamic_groups()
+            dataset.load_saved_view(
+                RankingOutcome.WELL_RANKED.value
+            ).iter_dynamic_groups()
         )
         assert len(groups) == 1
         shown = list(groups[0])
@@ -412,7 +449,3 @@ def test_case_view_groups_a_query_with_its_neighbours(
         assert len(shown) > 1
     finally:
         fo.delete_dataset(name)
-
-
-
-

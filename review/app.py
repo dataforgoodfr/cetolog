@@ -26,7 +26,6 @@ import numpy as np
 from demo.propositions import SIDES
 from review.ranking import (
     CATALOGUE_DELIVERY,
-    DATA,
     RankingOutcome,
     RankingResult,
     score_historical_photos,
@@ -35,10 +34,10 @@ from review.ranking import (
 # Avant l'import de FiftyOne : pas de télémétrie.
 os.environ["FIFTYONE_DO_NOT_TRACK"] = "1"
 
-import fiftyone as fo  # noqa: E402
-import fiftyone.brain as fob  # noqa: E402
-import fiftyone.core.odm as foo  # noqa: E402
-from fiftyone import ViewField as F  # noqa: E402
+import fiftyone as fo
+import fiftyone.brain as fob
+import fiftyone.core.odm as foo
+from fiftyone import ViewField as F
 
 DATASET = "cetolog-historique"
 BRAIN_KEY = "cetaceanet"
@@ -161,7 +160,9 @@ def _add_labels(
     if rank is not None:
         sample["label_rank"] = fo.Classification(label=f"rank={rank}")
     if side_score is not None:
-        sample["label_side_score"] = fo.Classification(label=_side_score_label(side_score))
+        sample["label_side_score"] = fo.Classification(
+            label=_side_score_label(side_score)
+        )
     if match:
         sample["label_is_match"] = fo.Classification(label="match")
 
@@ -211,6 +212,7 @@ def _catalogue_sample(photo: dict[str, str]) -> fo.Sample:
     sample["side"] = photo["cote"]
     sample.tags = ["catalogue"]
     return sample
+
 
 def _candidate_sample(
     catalogue_sample: fo.Sample,
@@ -328,7 +330,6 @@ def _candidate_rows(
     return rows
 
 
-
 def _true_match_outside_top(
     result: RankingResult, catalogue_ids_by_individual_side: dict[tuple[str, str], str]
 ) -> list[CandidateRow]:
@@ -355,12 +356,10 @@ def _true_match_outside_top(
     """
     if result.ranking_outcome != RankingOutcome.OUTSIDE_TOP:
         return []
-    
+
     rows = []
     for side in SIDES:
-        sample_id = catalogue_ids_by_individual_side.get(
-            (result.individual, side)
-        )
+        sample_id = catalogue_ids_by_individual_side.get((result.individual, side))
         if sample_id is None:
             continue
         rows.append(
@@ -408,21 +407,27 @@ def _add_candidates(
         query_samples = dataset.select(list(query_ids), ordered=True)
         query_samples.set_values("query_id", list(query_ids))
         query_samples.set_values("position", [0] * len(query_ids))
-        query_samples.set_values("ranking_outcome", [
-            result.ranking_outcome for result in ranking_results
-        ])
+        query_samples.set_values(
+            "ranking_outcome", [result.ranking_outcome for result in ranking_results]
+        )
     if not catalogue_ids_by_individual_side:
         return
     sources = {
         catalogue_sample.id: catalogue_sample
-           for catalogue_sample in dataset.select(list(set(catalogue_ids_by_individual_side.values())))
+        for catalogue_sample in dataset.select(
+            list(set(catalogue_ids_by_individual_side.values()))
+        )
     }
     copies = []
     for result, query_id in zip(ranking_results, query_ids, strict=True):
-        rows = _candidate_rows(result.candidate_photos, catalogue_ids_by_individual_side)
+        rows = _candidate_rows(
+            result.candidate_photos, catalogue_ids_by_individual_side
+        )
         match_rows = _true_match_outside_top(result, catalogue_ids_by_individual_side)
         existing_sample_ids = {row.sample_id for row in rows}
-        rows.extend(row for row in match_rows if row.sample_id not in existing_sample_ids)
+        rows.extend(
+            row for row in match_rows if row.sample_id not in existing_sample_ids
+        )
         for position, row in enumerate(rows, start=1):
             catalogue_sample = sources[row.sample_id]
             copies.append(
@@ -595,8 +600,7 @@ def rebuild(
         )
     if len(catalogue_embeddings) != len(catalogue):
         raise ValueError(
-            "Les empreintes et les photos du catalogue n'ont pas le même "
-            "nombre."
+            "Les empreintes et les photos du catalogue n'ont pas le même nombre."
         )
     ranking_results, embeddings = _order_results(ranking_results, embeddings)
     if fo.dataset_exists(DATASET):
@@ -624,7 +628,9 @@ def rebuild(
             brain_key=SIMILARITY_KEY,
             metric="cosine",
         )
-    _add_candidates(dataset, ranking_results, query_ids, catalogue_ids_by_individual_side)
+    _add_candidates(
+        dataset, ranking_results, query_ids, catalogue_ids_by_individual_side
+    )
     _save_case_views(dataset)
     if len(ranking_results) >= 2:
         # Calcule la t-SNE des empreintes CetaceaNet L2-normalisées.

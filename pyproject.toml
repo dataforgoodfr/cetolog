@@ -36,9 +36,9 @@ notebook = [
 # celle du bon dauphin, et celle du premier candidat.
 review = [
     "fiftyone>=0.24",
-    # 4.11+ arm64 wheels require macOS 13. 4.10 is the last
-    # release with a macosx_11_0_arm64 wheel, so this machine
-    # (macOS 12) can still install the review group.
+    # Les wheels 4.11+ arm64 nécessitent macOS 13. 4.10 est la
+    # dernière version avec une wheel macosx_11_0_arm64, donc cette
+    # machine (macOS 12) peut toujours installer le groupe review.
     "opencv-python-headless>=4.10,<4.11",
 ]
 pipeline = [

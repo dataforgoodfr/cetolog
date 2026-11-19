@@ -60,6 +60,20 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 
 **4. Prendre une tâche** : chaque doc a sa partie « Où on en est », avec ce qui reste à faire.
 
+## Lancer l'application de review
+
+L'application de review utilise [FiftyOne](https://docs.voxel51.com/user_guide/index.html) pour explorer visuellement les résultats du classement des photos d'historique.
+
+Pour lancer l'application :
+
+```bash
+uv run python -m review.app
+```
+
+Cette commande charge les photos d'historique classées et leurs empreintes, puis ouvre FiftyOne sur l'interface de review avec les vues groupées par cas sur `localhost:5151`.
+
+Voici la [documentation FiftyOne](https://docs.voxel51.com/user_guide/index.html) pour mieux comprendre les concepts de dataset, vues et filtres.
+
 ## Le dépôt
 
 | Dossier | Rôle |

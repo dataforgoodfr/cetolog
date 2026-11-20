@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import math
 import warnings
 from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import yaml
 from PIL import Image
 
@@ -90,9 +92,11 @@ class Segmenter:
         saliency = outputs[self.config["output_index"]][0, 0]
         saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min())
         binary = (saliency > self.config["threshold"]).cpu().numpy()
-        return Image.fromarray(binary.astype(np.uint8) * 255).resize(
+        mask = Image.fromarray(binary.astype(np.uint8) * 255).resize(
             image.size, resample=RESAMPLE[self.config["mask_resample"]]
         )
+        # Marge à pleine résolution : même largeur dans tous les sens
+        return _dilate(mask, round(self.config["margin"] * max(image.size)))
 
     def remove_background(self, image: str | Path | Image.Image) -> Image.Image:
         image = _open(image)
@@ -106,6 +110,22 @@ class Segmenter:
         if rows.size == 0:
             return image
         return result.crop((cols.min(), rows.min(), cols.max() + 1, rows.max() + 1))
+
+
+# Filtre max carré. Calculé sur le masque réduit d'un facteur radius // 8 :
+# 100 fois plus rapide sur une grande photo, marge dépassée d'au plus 1/8.
+def _dilate(mask: Image.Image, radius: int) -> Image.Image:
+    if radius <= 0:
+        return mask
+    pixels = torch.from_numpy(np.asarray(mask, dtype=np.float32))[None, None]
+    height, width = pixels.shape[-2:]
+    scale = max(1, radius // 8)
+    small = F.max_pool2d(pixels, scale, scale, ceil_mode=True)
+    size = 2 * math.ceil(radius / scale) + 1
+    for kernel in ((size, 1), (1, size)):
+        small = F.max_pool2d(small, kernel, 1, (kernel[0] // 2, kernel[1] // 2))
+    large = small.repeat_interleave(scale, -2).repeat_interleave(scale, -1)
+    return Image.fromarray(large[0, 0, :height, :width].numpy().astype(np.uint8))
 
 
 def _open(image: str | Path | Image.Image) -> Image.Image:

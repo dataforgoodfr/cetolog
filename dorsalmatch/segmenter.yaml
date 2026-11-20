@@ -22,6 +22,10 @@ normalisation: # ImageNet, celle de l'entraînement
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
 
+# Marge ajoutée autour de l'objet, en fraction du plus grand côté de la photo.
+# Garde le contour entier de la nageoire. 0 : masque du notebook.
+margin: 0.005
+
 mask_resample: bilinear # retour du masque à la taille de la photo : nearest, bilinear, bicubic
 background: [255, 255, 255] # couleur du fond retiré
 crop: true # recadrer sur le rectangle englobant de l'objet

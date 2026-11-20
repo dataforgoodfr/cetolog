@@ -8,13 +8,20 @@ pytest.importorskip("yaml")
 from PIL import Image  # noqa: E402
 
 from dorsalmatch import segmenter  # noqa: E402
-from dorsalmatch.segmenter import Segmenter, load_config, resolve_weights  # noqa: E402
+from dorsalmatch.segmenter import (  # noqa: E402
+    Segmenter,
+    _dilate,
+    load_config,
+    resolve_weights,
+)
 
 
 # Faux réseau : la carte choisie couvre la moitié gauche, les 6 autres la droite
 def fake_segmenter(**config):
     fake = Segmenter.__new__(Segmenter)
-    fake.config = load_config({"input_size": 4, "mask_resample": "nearest", **config})
+    fake.config = load_config(
+        {"input_size": 4, "mask_resample": "nearest", "margin": 0, **config}
+    )
     fake.device = "cpu"
 
     def network(x):
@@ -37,6 +44,33 @@ def test_defaults_match_the_notebook():
     assert config["output_index"] == 4  # la « d5 » du notebook
     assert config["threshold"] == 0.3
     assert config["input_size"] == 320
+
+
+def test_default_margin_keeps_a_band_around_the_fin():
+    assert load_config()["margin"] > 0
+
+
+# Photo de 8 px de large : une marge de 0,25 ajoute 2 px de chaque côté
+def test_margin_enlarges_the_mask():
+    mask = np.asarray(fake_segmenter(margin=0.25).mask(red_photo()))
+    assert (mask[:, :6] == 255).all()
+    assert (mask[:, 6:] == 0).all()
+
+
+def test_margin_enlarges_the_crop():
+    assert fake_segmenter(margin=0.25).remove_background(red_photo()).size == (6, 4)
+
+
+# Grande marge : calcul sur le masque réduit, jamais plus petit que la marge exacte
+def test_large_margin_covers_the_exact_margin():
+    square = np.zeros((200, 200), dtype=np.uint8)
+    square[90:110, 90:110] = 255
+    rows, cols = np.nonzero(np.asarray(_dilate(Image.fromarray(square), 40)))
+    assert rows.min() <= 50
+    assert rows.max() >= 149
+    assert cols.min() <= 50
+    assert cols.max() >= 149
+    assert rows.min() > 50 - 5  # dépassement de moins d'un facteur de réduction
 
 
 def test_unknown_parameter_is_refused():

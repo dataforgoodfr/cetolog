@@ -65,6 +65,8 @@ dorsalmatch.Segmenter({"threshold": 0.5, "crop": False})  # ou quelques valeurs
 
 Tous les paramètres sont dans [`segmenter.yaml`](segmenter.yaml) : modèle (`u2net` ou `u2netp`), poids, taille d'entrée, carte de sortie, seuil, normalisation, rééchantillonnage du masque, couleur du fond, recadrage. Un dict ou un autre fichier ne remplace que les clés données. Une clé inconnue est refusée.
 
+`margin` élargit le masque autour de l'objet, en fraction du plus grand côté de la photo : 0,02 ajoute environ 70 px sur une photo de 3 400 px. Le masque est calculé sur une image de 320 px, puis agrandi : sans marge, son bord rogne la pointe et le bord de fuite de la nageoire. Or la forme de la nageoire identifie le dauphin. Mieux vaut garder un peu de mer que perdre des pixels de nageoire. Sur des photos de l'historique, 0,01 suffisait déjà. `margin: 0` donne le masque du notebook.
+
 `output_index: 4` reprend la carte choisie par le notebook. Le réseau renvoie 7 cartes : la carte fusionnée (0), puis les 6 sorties latérales. Le notebook les numérote de 1 à 7 et prend « d5 ».
 
 **Poids.** Ils ne sont pas encore sur le Hugging Face Hub. Il faut télécharger `u2net.pth` (176 Mo) ou `u2netp.pth` (4,7 Mo) depuis les liens du [README de U-2-Net](https://github.com/xuebinqin/U-2-Net#usage-for-salient-object-detection), puis indiquer le chemin dans `weights.path`. Une fois les poids publiés sur le Hub, il suffira de remplacer `path` par `repo`, `filename` et `revision` (un commit figé). Le téléchargement et le cache sont alors automatiques, comme pour CetaceaNet. Les fichiers `.pth` et `.safetensors` sont acceptés.

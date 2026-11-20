@@ -1,0 +1,27 @@
+# Détourage par détection d'objet saillant (U-2-Net).
+# Valeurs par défaut : celles du notebook remove-background-salient-object-detection.
+
+model: u2net # u2net (176 Mo) ou u2netp (4,7 Mo, plus rapide, moins précis)
+
+# Poids : un chemin local, ou un dépôt Hugging Face (repo + filename + revision).
+weights:
+  path: ~/models/U-2-Net/saved_models/u2net/u2net.pth
+  # repo: <org>/u2net
+  # filename: u2net.pth
+  # revision: <sha du commit>
+
+input_size: 320 # côté du carré vu par le réseau
+
+# Rang dans les 7 cartes renvoyées par le réseau : 0 = carte fusionnée, 1 à 6 = sorties
+# latérales. 4 = la « d5 » du notebook, qui numérote les cartes à partir de 1.
+output_index: 4
+
+threshold: 0.3 # au-dessus : objet, en dessous : fond (carte ramenée à 0..1)
+
+normalisation: # ImageNet, celle de l'entraînement
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+mask_resample: bilinear # retour du masque à la taille de la photo : nearest, bilinear, bicubic
+background: [255, 255, 255] # couleur du fond retiré
+crop: true # recadrer sur le rectangle englobant de l'objet

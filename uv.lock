@@ -370,6 +370,7 @@ dev = [
 ml = [
     { name = "huggingface-hub" },
     { name = "numpy" },
+    { name = "pyyaml" },
     { name = "safetensors" },
     { name = "scikit-learn" },
     { name = "timm" },
@@ -407,6 +408,7 @@ dev = [
 ml = [
     { name = "huggingface-hub", specifier = ">=0.30" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "safetensors", specifier = ">=0.4" },
     { name = "scikit-learn", specifier = ">=1.5" },
     { name = "timm", specifier = ">=1.0.20" },

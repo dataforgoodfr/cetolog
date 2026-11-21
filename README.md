@@ -56,6 +56,7 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 | Data scientist, ML engineer | Le ML : empreintes, recherche, d'autres modèles à tester | [docs/cetolog_ml](docs/cetolog_ml/README.md) |
 | Analytics engineer, géodonnées | La base de données, QGIS et la carte interactive | [vers une base de données](docs/cetolog_pipeline/bdd.md) |
 | Dev backend, dev frontend | L'outil de validation, qui part de la démo | [docs/cetolog_demo](docs/cetolog_demo/README.md) |
+| Dev frontend (Next.js) | L'application web Next.js / POC front-end | [web/](web/README.md) |
 | DevOps | La mise en ligne sur Clever Cloud | [mettre la démo en ligne](docs/cetolog_demo/README.md#la-mettre-en-ligne-sur-clever-cloud) |
 
 **4. Prendre une tâche** : chaque doc a sa partie « Où on en est », avec ce qui reste à faire.
@@ -68,9 +69,30 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 | `dorsalmatch/` | La chaîne ML : modèles, empreintes, recherche, mesure |
 | `demo/` | La démo Gradio : le ML propose, Miraceti décide |
 | `notebooks/` | `data_livraison` : récupérer les données et voir ce qu'on attend ; `baseline_ml` : le niveau à battre ; puis les explorations : manifestes (`build_manifests`, `test_best_off`), détourage des dorsales (`remove-background-…`), analyse spatiale des observations (`analyse_V2`) |
+| `web/` | L'application web Next.js (POC / base front-end) |
 | `docs/` | La documentation, un dossier par partie |
 | `tests/` | Les tests, sans données ni bucket |
 | `data/` | La copie locale du bucket, jamais dans Git |
+
+## L'application web (`web/`)
+
+Le dossier `web/` contient l'application **Next.js** (TypeScript, App Router) du projet. Elle sert de base au front-end et aux POC (notamment l'exploration de faisabilité **Next.js + ONNX** côté navigateur).
+
+Il faut [Node.js](https://nodejs.org/) et `npm`. Depuis la racine du dépôt :
+
+```bash
+cd web
+npm install
+```
+
+Commandes utiles (à lancer depuis `web/`) :
+
+```bash
+npm run dev    # Lance le serveur de développement (http://localhost:3000)
+npm run build  # Génère le build de production
+npm run start  # Lance le serveur de production (après build)
+npm run lint   # Vérifie le code avec ESLint
+```
 
 ## Installer
 

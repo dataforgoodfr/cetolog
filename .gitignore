@@ -172,5 +172,18 @@ data/
 !docs/assets/*.png
 .ruff_cache/
 
+# Next.js / Node : les ignores propres à l'application web sont gérés dans web/.gitignore
+# (séparation des responsabilités entre la racine Python et le sous-projet web).
+# Filet de sécurité racine : ignore uniquement les artefacts Node/Next.js les plus courants
+# au cas où ils seraient créés accidentellement hors de web/.
+node_modules/
+.next/
+out/
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
 # Deploy clevercloud
 .clever.json

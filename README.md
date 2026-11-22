@@ -81,7 +81,7 @@ Voici la [documentation FiftyOne](https://docs.voxel51.com/user_guide/index.html
 | `pipeline/` | L'accès au bucket (`storage.py`) ; la chaîne de données est à construire |
 | `dorsalmatch/` | La chaîne ML : modèles, empreintes, recherche, mesure |
 | `demo/` | La démo Gradio : le ML propose, Miraceti décide |
-| `notebooks/` | `data_livraison` : récupérer les données et voir ce qu'on attend ; `baseline_ml` : le niveau à battre |
+| `notebooks/` | `data_livraison` : récupérer les données et voir ce qu'on attend ; `baseline_ml` : le niveau à battre ; puis les explorations : manifestes (`build_manifests`, `test_best_off`), détourage des dorsales (`remove-background-…`), analyse spatiale des observations (`analyse_V2`) |
 | `docs/` | La documentation, un dossier par partie |
 | `tests/` | Les tests, sans données ni bucket |
 | `data/` | La copie locale du bucket, jamais dans Git |

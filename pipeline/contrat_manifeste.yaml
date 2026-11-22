@@ -1,0 +1,42 @@
+# Les manifestes de curated/ : une ligne par photo
+
+colonnes:
+  - name : livraison
+    description: nom du zip, sans extension
+    type: string
+  - name : fichier_origine
+    description: nom de la photo, tel que reçu
+    type: string
+  - name: individu
+    description: le dauphin, voir sa définition dans chaque manifeste
+    type: string
+  - name: cote
+    description: D ou G
+    type: string
+  - name: date
+    description: > 
+      Date de la photo (AAAA-MM-JJ); 
+      celle du nom du fichier ; 
+      à défaut, celle des métadonnées EXIF ; 
+      vide si on ne la trouve dans aucun des deux
+    type: float
+  - name: sha256
+    description: empreinte du fichier
+    type: string
+  - name: anomalies
+    description: ce qui cloche, vide sinon
+    type: string
+
+manifestes:
+  catalogue:
+    fichier: curated/catalogue/manifests/2026-11-06_catalogue_tt.csv
+    colonnes: [livraison, fichier_origine, individu, cote, date, sha256, anomalies]
+    individu: identifiant définitif du dauphin dans le catalogue de Miraceti (TUTR…)
+
+  best_of:
+    fichier: curated/best_of/manifests/2026-11-06_bestof_20230307_sete.csv
+    colonnes: [livraison, fichier_origine, individu, cote, date, sha256, anomalies]
+    individu: >
+      identifiant provisoire (IND…), donné par regroupement intra-groupe
+      pendant une seule observation. Il ne vaut que dans ce best-of :
+      IND1 de Sète n'a aucun lien avec un TUTR ni avec un IND1 d'un autre best-of.

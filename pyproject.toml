@@ -24,6 +24,7 @@ dev = [
 ml = [
     "huggingface-hub>=0.30",
     "numpy>=2.0",
+    "pyyaml>=6.0",
     "safetensors>=0.4",
     "scikit-learn>=1.5",
     "timm>=1.0.20",
@@ -56,6 +57,9 @@ default-groups = ["dev", "pipeline"]
 [tool.ruff]
 line-length = 88
 target-version = "py312"
+# Code vendorisé : jamais reformaté. force-exclude couvre les fichiers passés par pre-commit.
+extend-exclude = ["dorsalmatch/models/u2net.py"]
+force-exclude = true
 
 [tool.ruff.lint]
 select = [

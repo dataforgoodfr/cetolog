@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import zipfile
 from pathlib import Path
@@ -6,6 +7,9 @@ from pathlib import Path
 import pandas as pd
 from PIL import Image
 from PIL.ExifTags import TAGS
+
+logging.basicConfig(format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+
 
 # Chemins utilisés pour récupération des ZIP et destination des photos
 
@@ -18,7 +22,7 @@ for fichier_source in fichiers_source:
     with zipfile.ZipFile(fichier_source, "r") as zip_ref:
         zip_ref.extractall(chemin_destination)
 
-    print("catalogue décompressé avec succès !")
+    logging.warning("catalogue décompressé avec succès !")
 
 
 # Création des empreintes fichiers sha256
@@ -60,8 +64,8 @@ for photo in photos_test:
 df_resultats = pd.DataFrame.from_dict(resultats, orient="index")
 df_hashcodes = pd.DataFrame.from_dict(hashcodes, orient="index")
 
-print(df_resultats.shape)
-print(df_hashcodes.shape)
+logging.warning(df_resultats.shape)
+logging.warning(df_hashcodes.shape)
 
 
 df_merge = pd.merge(
@@ -69,14 +73,18 @@ df_merge = pd.merge(
 )
 
 
-df_merge = df_merge.rename(columns={0: "sha_256"})
+df_merge = df_merge.rename(columns={0: "sha256"})
 df_merge["livraison"] = fichier_source.stem
 df_merge["fichier_origine"] = df_merge.index.astype(str)
 df_merge["cote"] = df_merge["fichier_origine"].str[1]
-df_merge["individu"] = df_merge["fichier_origine"].str[3:11]
+df_merge["individu"] = df_merge["fichier_origine"].str.extract(r"(TUTR\d+)")
+
+df_merge["individu"] = df_merge["individu"].str.replace(
+    r"TUTR(\d{3})$", r"TUTR0\1", regex=True
+)
 
 df_final = df_merge[
-    ["livraison", "fichier_origine", "individu", "cote", "DateTimeOriginal", "sha_256"]
+    ["livraison", "fichier_origine", "individu", "cote", "DateTimeOriginal", "sha256"]
 ]
 
 df_final = df_final.rename(columns={"DateTimeOriginal": "date"})
@@ -89,13 +97,22 @@ df_final["date"] = pd.to_datetime(
 def detecter_anomalies(row):
     anomalies = []
 
-    if df_final["sha_256"].duplicated(keep=False).loc[row.name]:
+    if df_final["sha256"].duplicated(keep=False).loc[row.name]:
         anomalies.append("Doublon SHA256")
 
     extension = os.path.splitext(str(row["fichier_origine"]))[1]
 
     if extension.lower() != ".jpg":
         anomalies.append(f"Extension incorrecte ({extension})")
+
+    if pd.isna(row["individu"]):
+        anomalies.append("identifiant hors TUTR")
+
+    elif len(row["individu"]) > 8:
+        anomalies.append("identifiant trop long")
+
+    if df_final.duplicated(subset=["individu", "cote"], keep=False).loc[row.name]:
+        anomalies.append("même indivu, même côté, sha256 différents")
 
     return " ; ".join(anomalies) if anomalies else ""
 
@@ -105,4 +122,5 @@ df_final["anomalies"] = df_final.apply(detecter_anomalies, axis=1)
 
 df_final.to_csv("test_manifests.csv", index=False)
 
-print("fichier .csv créé")
+
+logging.warning("fichier .csv créé")

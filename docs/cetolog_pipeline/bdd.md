@@ -8,4 +8,4 @@ L'idée : les fichiers de la chaîne de données, ceux de Miraceti et leurs **ob
 
 C'est la suite des couches de `data/` : `raw/` → `curated/` → `derived/` → base → gold.
 
-**Où on en est :** le schéma de la base reste à concevoir, à partir des fichiers ci-dessus.
+**Où on en est :** un premier schéma est posé : trois tables pour les photos, les empreintes et les propositions du ML. Voir [`backend/`](../../backend/README.md). Les observations QGIS et la couche gold restent à concevoir.

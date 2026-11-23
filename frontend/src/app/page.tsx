@@ -52,15 +52,15 @@ export default function Home() {
               width={16}
               height={14}
             />
-            Deploy Now
+            Cetolog
           </a>
           <a
             className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+            href="https://github.com/dataforgoodfr/cetolog"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Documentation
+            Docs DataForGood
           </a>
         </div>
       </main>

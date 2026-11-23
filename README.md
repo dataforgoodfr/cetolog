@@ -57,7 +57,7 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 | Analytics engineer, géodonnées | La base de données, QGIS et la carte interactive | [vers une base de données](docs/cetolog_pipeline/bdd.md) |
 | Dev backend, dev frontend | L'outil de validation, qui part de la démo | [docs/cetolog_demo](docs/cetolog_demo/README.md) |
 | Dev frontend (Next.js) | L'application web Next.js / POC front-end | [frontend/](frontend/README.md) |
-| DevOps | La mise en ligne sur Clever Cloud | [mettre la démo en ligne](docs/cetolog_demo/README.md#la-mettre-en-ligne-sur-clever-cloud) |
+| DevOps | La mise en ligne sur Clever Cloud | [mettre la démo en ligne](docs/cetolog_demo/README.md#la-mettre-en-ligne-sur-clever-cloud), [le frontend sur Clever Cloud](docs/frontend_ci/README.md) |
 
 **4. Prendre une tâche** : chaque doc a sa partie « Où on en est », avec ce qui reste à faire.
 

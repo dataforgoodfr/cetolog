@@ -17,6 +17,7 @@ dev = [
     "moto[s3]>=5.2.5",
     "numpy>=2.0",
     "pandas>=2",
+    "pre-commit>=4.0.0",
     "pytest>=9.2.0",
     "scikit-learn>=1.5",
 ]
@@ -34,6 +35,15 @@ notebook = [
     "ipykernel>=6.29",
     "matplotlib>=3.9",
     "nbconvert>=7.16",
+]
+# 0.24 introduit les champs média multiples : la photo d'historique,
+# celle du bon dauphin, et celle du premier candidat.
+review = [
+    "fiftyone>=0.24",
+    # Les wheels 4.11+ arm64 nécessitent macOS 13. 4.10 est la
+    # dernière version avec une wheel macosx_11_0_arm64, donc cette
+    # machine (macOS 12) peut toujours installer le groupe review.
+    "opencv-python-headless>=4.10,<4.11",
 ]
 pipeline = [
     "boto3>=1.43.123",

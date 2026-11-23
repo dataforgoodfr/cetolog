@@ -11,6 +11,7 @@ Le schéma se modifie dans [dorsalmatch.excalidraw](../assets/dorsalmatch.excali
 1. **[Comment ça marche](fonctionnement.md)** : chaque étape du schéma, et où elle est dans le code.
 2. **[L'utiliser](utiliser.md)** : calculer des empreintes, chercher, mesurer.
 3. **[Le faire évoluer](a_tester.md)** : les modèles et les étapes à tester.
+4. **[Inspecter ses erreurs](../../review/README.md)** : l'application FiftyOne, pour voir photo par photo où le classement se trompe sur l'historique.
 
 Les résultats chiffrés sont dans [le notebook](../../notebooks/baseline_ml.ipynb). Ses exemples en photos n'apparaissent qu'une fois relancé en local.
 

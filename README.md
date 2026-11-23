@@ -60,20 +60,6 @@ Le détail de chaque jeu, ses pièges et ses anomalies : [les données de Mirace
 
 **4. Prendre une tâche** : chaque doc a sa partie « Où on en est », avec ce qui reste à faire.
 
-## Lancer l'application de review
-
-L'application de review utilise [FiftyOne](https://docs.voxel51.com/user_guide/index.html) pour explorer visuellement les résultats du classement des photos d'historique.
-
-Pour lancer l'application :
-
-```bash
-uv run python -m review.app
-```
-
-Cette commande charge les photos d'historique classées et leurs empreintes, puis ouvre FiftyOne sur l'interface de review avec les vues groupées par cas sur `localhost:5151`.
-
-Voici la [documentation FiftyOne](https://docs.voxel51.com/user_guide/index.html) pour mieux comprendre les concepts de dataset, vues et filtres.
-
 ## Le dépôt
 
 | Dossier | Rôle |
@@ -81,6 +67,7 @@ Voici la [documentation FiftyOne](https://docs.voxel51.com/user_guide/index.html
 | `pipeline/` | L'accès au bucket (`storage.py`) ; la chaîne de données est à construire |
 | `dorsalmatch/` | La chaîne ML : modèles, empreintes, recherche, mesure |
 | `demo/` | La démo Gradio : le ML propose, Miraceti décide |
+| `review/` | L'inspection des erreurs du ML dans FiftyOne, sur l'historique : [le lancer](review/README.md) |
 | `notebooks/` | `data_livraison` : récupérer les données et voir ce qu'on attend ; `baseline_ml` : le niveau à battre ; puis les explorations : manifestes (`build_manifests`, `test_best_off`), détourage des dorsales (`remove-background-…`), analyse spatiale des observations (`analyse_V2`) |
 | `docs/` | La documentation, un dossier par partie |
 | `tests/` | Les tests, sans données ni bucket |

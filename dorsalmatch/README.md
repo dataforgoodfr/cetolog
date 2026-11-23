@@ -47,7 +47,7 @@ Les deux pièges de CetaceaNet, réglés dans [`models/cetaceanet.py`](models/ce
 
 ## Détourage (prétraitement)
 
-`Segmenter` isole la nageoire avant le calcul des empreintes. Il utilise U-2-Net, un détecteur d'objet saillant. Le fond devient blanc et la photo est recadrée sur l'objet. Un notebook montre son intérêt : [`remove-background-salient-object-detection`](../notebooks/remove-background-salient-object-detection.ipynb).
+`Segmenter` isole la nageoire avant le calcul des empreintes. Il utilise U-2-Net, un détecteur d'objet saillant. Le fond devient blanc et la photo est recadrée sur l'objet. Pour le voir en action et jouer avec ses réglages : [`detourage_segmenter`](../notebooks/detourage_segmenter.ipynb). L'exploration d'origine, adaptée de Kaggle, est dans [`remove-background-salient-object-detection`](../notebooks/remove-background-salient-object-detection.ipynb).
 
 ```python
 segmenter = dorsalmatch.Segmenter()  # paramètres de segmenter.yaml

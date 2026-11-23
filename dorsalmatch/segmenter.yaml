@@ -4,11 +4,10 @@
 model: u2net # u2net (176 Mo) ou u2netp (4,7 Mo, plus rapide, moins précis)
 
 # Poids : un chemin local, ou un dépôt Hugging Face (repo + filename + revision).
-weights:
-  path: ~/models/U-2-Net/saved_models/u2net/u2net.pth
-  # repo: <org>/u2net
-  # filename: u2net.pth
-  # revision: <sha du commit>
+weights: 
+  repo: mandresyandri/cetolog-stagging-ml # Temporaire le temps qu'on host sur la vrai HF de dataforgood
+  filename: u2net.pth
+  revision: 0db08ad4512996dc02437133369f9708647de3e9
 
 input_size: 320 # côté du carré vu par le réseau
 

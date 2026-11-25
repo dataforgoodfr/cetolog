@@ -92,6 +92,16 @@ Suivre les logs de déploiement :
 clever logs
 ```
 
+### 7) Voir l’URL de l’application
+
+```bash
+# Afficher les domaines configurés
+clever domain
+
+# Ouvrir l'application dans le navigateur
+clever open
+```
+
 ## Remarques
 
 - Le fichier `.env` local ne doit pas être commité. Les variables de déploiement Clever Cloud se configurent côté Clever Cloud, pas dans le repo.

@@ -24,10 +24,12 @@ Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 ## Commandes utiles
 
 ```bash
-npm run dev    # Serveur de développement (http://localhost:3000)
-npm run build  # Build de production
-npm run start  # Serveur de production (après build), écoute sur 0.0.0.0:$PORT
-npm run lint   # Vérification ESLint
+npm run dev           # Serveur de développement (http://localhost:3000)
+npm run build         # Build de production
+npm run start         # Serveur de production (après build), écoute sur 0.0.0.0:$PORT
+npm run lint          # Vérification ESLint
+npm run format        # Formater les fichiers avec Prettier
+npm run format:check  # Vérifier le formatage sans modifier les fichiers
 ```
 
 ## Déploiement sur Clever Cloud

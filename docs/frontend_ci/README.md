@@ -20,6 +20,8 @@ Variables renseignées dans la console Clever Cloud :
 | `DEMO_PASSWORD` | active l’auth basique ; sans valeur, la démo reste ouverte |
 | `DEMO_PROPOSITIONS_KEY` | facultatif : figer le CSV dans `derived/propositions/` |
 
+Si l’add-on Cellar est lié à l’app, Clever Cloud injecte `CELLAR_ADDON_HOST`, `CELLAR_ADDON_KEY_ID` et `CELLAR_ADDON_KEY_SECRET` : le frontend les accepte à la place de `S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID` et `AWS_SECRET_ACCESS_KEY`. La région Cellar est alors `us-east-1`. `S3_BUCKET` reste à définir, car l’add-on n’injecte pas le nom du bucket.
+
 Ces variables ne sont jamais préfixées `NEXT_PUBLIC_` : elles sont lues uniquement par le serveur Next.js. Les valeurs de production restent dans la console Clever Cloud, pas dans le dépôt.
 
 Secrets GitHub de la CI : `CLEVER_TOKEN`, `CLEVER_SECRET` et `CLEVER_APP_ID_FRONTEND`.

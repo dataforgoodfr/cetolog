@@ -11,7 +11,7 @@ export default function Home({ searchParams }: HomeProps) {
       <header className="demo-header">
         <h1 className="demo-title">Cétolog · démo de matching</h1>
         <p className="demo-intro">
-          Maquette filaire sur données fictives : ni bucket ni photo Miraceti.
+          Démonstration de matching : le ML propose, Miraceti décide.
         </p>
       </header>
       <Suspense fallback={<p className="demo-fallback">Chargement…</p>}>

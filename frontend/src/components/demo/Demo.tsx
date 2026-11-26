@@ -34,7 +34,7 @@ function pageHref(individu: string, page: number): string {
 }
 
 export async function Demo({ searchParams }: DemoProps) {
-  const payload = getDemoPayload();
+  const payload = await getDemoPayload();
   const params = await searchParams;
   const individus = [...payload.individus].sort(byNumber);
   // Comme `DOLPHINS_LIST` : seuls les individus ayant au moins une photo exploitables.

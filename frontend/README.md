@@ -32,23 +32,25 @@ npm run format        # Formater les fichiers avec Prettier
 npm run format:check  # Vérifier le formatage sans modifier les fichiers
 ```
 
-## Démo option A (données fictives)
+## Démo option A (données réelles, vignettes fictives)
 
-La page d’accueil reproduit le parcours de la démo Gradio avec des données synthétiques : aucun bucket S3, aucune photo Miraceti et aucun secret ne sont nécessaires.
+La page d’accueil reproduit le parcours de la démo Gradio. Le contrat vient du bucket : `derived/propositions/*.csv` et les deux `photos.csv`. Aucun `.npy`, modèle ou calcul de cosinus n’est lu dans le frontend.
+
+Variables serveur requises, à renseigner hors du dépôt (Clever Cloud en production) : `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. `DEMO_PROPOSITIONS_KEY` permet de figer le CSV de propositions ; sinon le dernier nom de fichier par ordre lexicographique est utilisé. Les livraisons `best_of` et `catalogue` viennent des colonnes du CSV.
 
 Après `npm run dev` :
 
-- `/` : choix d’un individu (`IND1`, `IND2`, `IND10`), photos du best-of, 10 candidats et catalogue paginé par 12 ;
-- `/?individu=IND10&page=2` : lien direct vers un individu et une page du catalogue ;
-- `/api/demo` : contrat JSON consommé par la page ;
-- `/api/demo/photos/<imageId>` : vignette SVG fictive. Un identifiant inconnu renvoie 404.
+- `/` : choix d’un individu, photos du best-of, 10 candidats et catalogue paginé par 12 ;
+- `/?individu=IND2&page=2` : lien direct vers un individu et une page du catalogue ;
+- `/api/demo` : contrat JSON avec `Cache-Control: no-store` ;
+- `/api/demo/photos/<imageId>` : vignette SVG tant que le proxy d’images n’est pas branché. Un identifiant inconnu renvoie 404.
 
 Reproduction manuelle rapide :
 
-1. vérifier que les individus sont triés `IND1`, `IND2`, `IND10` ;
-2. sélectionner `IND2` : une photo sans côté est libellée `?`, et `TUTR024` est dans `reponse`, donc absent des candidats ;
-3. vérifier les libellés `pas de photo gauche` sur les candidats concernés ;
-4. parcourir les 2 pages du catalogue, puis ouvrir `?page=99` : la page est ramenée à `2` ;
+1. comparer `/api/demo` avec `derived/propositions/<best_of>.csv` : mêmes individus, mêmes candidats et scores arrondis à 2 décimales ;
+2. vérifier que `IND2` arrive avant `IND10`, et que `?page=99` ramène à la dernière page ;
+3. vérifier qu’aucun chemin `curated/` ni `fichier_origine` n’apparaît dans le JSON ;
+4. retirer une variable S3 : la page affiche un message d’erreur sans endpoint ni bucket ;
 5. ouvrir `/api/demo/photos/inconnu` : la route renvoie 404.
 
 Le style wireframe est uniquement dans `src/app/globals.css`, importé par `src/app/layout.tsx`. Supprimer cet import suffit à retirer tout le style sans modifier la structure JSX.
@@ -59,7 +61,7 @@ Comme la démo Gradio, l’accès est ouvert tant que `DEMO_PASSWORD` est absent
 
 Vérification manuelle : avec les variables définies, `curl -i http://localhost:3000/` renvoie `401` et un en-tête `WWW-Authenticate` ; `curl -u miraceti:<mot-de-passe> -i http://localhost:3000/api/demo` renvoie `200` avec `Cache-Control: no-store`.
 
-Limites connues : pas encore de S3 ni de données réelles, pas d’explicabilité et aucun calcul ML dans le frontend. La phase 2 remplacera `src/demo/get-demo.ts` par l’adaptateur de données serveur.
+Limites connues : les vignettes restent des SVG fictifs, pas d’explicabilité et aucun calcul ML dans le frontend. Le proxy d’images S3 est la prochaine étape.
 
 ## Déploiement sur Clever Cloud
 

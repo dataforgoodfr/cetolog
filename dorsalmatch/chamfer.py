@@ -1,9 +1,10 @@
 import numpy as np
 
-MODES = ("max", "chamfer_asym", "chamfer_sym") # par défaut max()
+MODES = ("max", "chamfer_asym", "chamfer_sym")  # par défaut max()
 SIDES = ("D", "G")
 # Au-delà, même photo déjà au catalogue : écartée, mais donne la réponse
 NEAR_IDENTICAL = 0.97
+
 
 # Similarités cosinus arrondies
 def cosine_similarity_matrix(queries, candidates, near_identical):
@@ -14,14 +15,16 @@ def cosine_similarity_matrix(queries, candidates, near_identical):
     c = c / np.maximum(np.linalg.norm(c, axis=1, keepdims=True), 1e-12)
     sim = np.round(q @ c.T, 3)
     if near_identical is not None:
-        sim[sim >= near_identical] = -np.inf # quasi-doublons sont masqués
+        sim[sim >= near_identical] = -np.inf  # quasi-doublons sont masqués
     return sim
+
 
 # Moyenne des meilleurs cosinus par ligne
 def _mean_best(sim):
     best = sim.max(axis=1, initial=-np.inf)
     best = best[np.isfinite(best)]
     return best.mean() if best.size else None
+
 
 # Score de deux ensembles d'embeddings
 def score(queries, candidates, mode="max", near_identical=0.97):
@@ -64,6 +67,7 @@ def best_cosines(
         if value is not None:
             best[str(name)] = value
     return best, identical
+
 
 # Score : le meilleur cosinus, tous côtés confondus
 def rank(

@@ -129,4 +129,4 @@ clever logs
 ## Remarques
 
 - Le fichier `.env` local ne doit pas être commité. Les variables de déploiement Clever Cloud se configurent côté Clever Cloud, pas dans le repo.
-- En cas de souci de déploiement, vérifier d’abord : `APP_FOLDER`, la commande `start`, la version Node, le hook de build et les logs Clever Cloud.
+- En cas de souci de déploiement, vérifier d’abord : `CC_APP_FOLDER`, la commande `start`, la version Node, le hook de build et les logs Clever Cloud.

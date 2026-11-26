@@ -21,6 +21,18 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
+Le frontend ne charge pas tout seul le `.env` à la racine du dépôt. Pour travailler avec les vraies données, exporter ses variables avant de lancer le serveur :
+
+```bash
+cd frontend
+set -a
+source ../.env
+set +a
+npm run dev
+```
+
+Sans ces variables, la page affiche une erreur « Variables S3 manquantes » : c’est attendu.
+
 ## Commandes utiles
 
 ```bash

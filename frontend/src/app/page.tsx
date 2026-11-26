@@ -1,69 +1,22 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { Suspense } from "react";
+import { Demo } from "@/components/demo/Demo";
 
-export default function Home() {
+type HomeProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default function Home({ searchParams }: HomeProps) {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Cetolog
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://github.com/dataforgoodfr/cetolog"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Docs DataForGood
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="demo">
+      <header className="demo-header">
+        <h1 className="demo-title">Cétolog · démo de matching</h1>
+        <p className="demo-intro">
+          Maquette filaire sur données fictives : ni bucket ni photo Miraceti.
+        </p>
+      </header>
+      <Suspense fallback={<p className="demo-fallback">Chargement…</p>}>
+        <Demo searchParams={searchParams} />
+      </Suspense>
+    </main>
   );
 }

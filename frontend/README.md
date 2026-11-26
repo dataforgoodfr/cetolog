@@ -21,6 +21,17 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
+Next.js ne lit les fichiers `.env*` que dans `frontend/`. Une seule fois par clone, créer un lien vers le `.env` racine (jamais versionné, déjà ignoré par `.gitignore`) :
+
+```bash
+cd frontend
+ln -s ../.env .env.local
+```
+
+Puis lancer simplement `npm run dev`. Next lit `.env.local` sans passer par le shell : les valeurs ne sont pas évaluées comme du code et il n’y a qu’une seule source de secrets. Sans ce lien, la page affiche « Variables S3 manquantes » : c’est attendu.
+
+Sans lien symbolique possible (Windows), copier le fichier une fois avec `cp ../.env .env.local`, puis le recopier à chaque modification du `.env` racine.
+
 ## Commandes utiles
 
 ```bash

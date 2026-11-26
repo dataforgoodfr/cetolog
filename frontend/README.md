@@ -53,7 +53,13 @@ Reproduction manuelle rapide :
 
 Le style wireframe est uniquement dans `src/app/globals.css`, importé par `src/app/layout.tsx`. Supprimer cet import suffit à retirer tout le style sans modifier la structure JSX.
 
-Limites connues : pas de S3, pas d’authentification, pas d’explicabilité et aucun calcul ML dans le frontend. La phase 2 remplacera `src/demo/get-demo.ts` par l’adaptateur de données serveur.
+### Authentification
+
+Comme la démo Gradio, l’accès est ouvert tant que `DEMO_PASSWORD` est absent. Définir `DEMO_USER` (par défaut `miraceti`) et `DEMO_PASSWORD` côté serveur protège la page et les routes `/api/demo/*` en Basic Auth. Ces variables restent hors du dépôt et ne sont jamais préfixées `NEXT_PUBLIC_`.
+
+Vérification manuelle : avec les variables définies, `curl -i http://localhost:3000/` renvoie `401` et un en-tête `WWW-Authenticate` ; `curl -u miraceti:<mot-de-passe> -i http://localhost:3000/api/demo` renvoie `200` avec `Cache-Control: no-store`.
+
+Limites connues : pas encore de S3 ni de données réelles, pas d’explicabilité et aucun calcul ML dans le frontend. La phase 2 remplacera `src/demo/get-demo.ts` par l’adaptateur de données serveur.
 
 ## Déploiement sur Clever Cloud
 

@@ -1,0 +1,6 @@
+# Files already ignored by frontend/.gitignore are skipped by Prettier.
+# .clever.json is ignored by the root .gitignore, so list it explicitly here.
+.clever.json
+
+# Lockfile (keep formatting decisions out of dependency resolution)
+package-lock.json

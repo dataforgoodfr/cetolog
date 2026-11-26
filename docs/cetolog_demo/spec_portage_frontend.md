@@ -77,7 +77,7 @@ Ces règles sont celles de `demo/propositions.py` et doivent servir de référen
 | Règle | Valeur / comportement |
 |---|---|
 | Côtés acceptés | `D` et `G` seulement. |
-| Comparaison | Une photo `D` est comparée aux photos `D` du catalogue ; une photo `G` aux photos `G`. Le miroir sert uniquement au calcul de l’empreinte. |
+| Comparaison | Toutes les photos exploitables de l’individu (côté `D` ou `G`) sont comparées aux photos du catalogue du côté demandé. Le miroir sert uniquement au calcul de l’empreinte. |
 | Score d’un candidat | `max(cosinus_D, cosinus_G)` pour ce dauphin. |
 | Presque identique | Un cosinus `>= 0.97` est exclu des candidats et ajouté à `reponse`. |
 | Classement | `(-score, individu)`, pour être stable d’un lancement à l’autre. |
@@ -162,7 +162,7 @@ Trois chemins sont possibles. Le premier est recommandé pour la première versi
 
 ## 5. Accès aux données, sécurité et déploiement
 
-- Le bucket est privé (`cetolog-data`). Les variables `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` restent côté serveur.
+- Le bucket est privé ; son nom n’est pas versionné. Les variables `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` restent côté serveur.
 - Aucune variable `NEXT_PUBLIC_*` ne doit contenir ces valeurs. Les variables publiques sont figées au build et visibles dans le navigateur.
 - L’authentification facultative `DEMO_PASSWORD` / `DEMO_USER` doit être vérifiée côté serveur.
 - Les photos ne sont pas versionnées. Utiliser un répertoire temporaire ou un streaming ; ne pas copier `curated/` dans `frontend/public`.
@@ -207,7 +207,16 @@ Pour un best-of et un catalogue donnés :
 6. Quelle cible chiffrée de latence, de taille et de mémoire pour le POC ONNX ? Le dépôt n’en définit aucune.
 7. Faut-il figer explicitement `BEST_OF` et `CATALOGUE` dans le contrat du POC, pour éviter que `latest()` change de livraison entre deux démonstrations ?
 
-## 9. Références
+## 9. Arbitrages retenus pour la phase 2
+
+- Source : `derived/propositions/<best_of>.csv`, après vérification de parité avec `propose()`. Sur la livraison `2026-11-06_bestof_20230307_sete`, les 24 individus et les 240 lignes du CSV correspondent aux scores recalculés depuis les `.npy` (0 écart).
+- Livraisons : lues dans les colonnes `best_of` et `catalogue` du CSV, plutôt que choisies par `latest()`. Le fichier de propositions peut être figé par `DEMO_PROPOSITIONS_KEY`.
+- Accès aux données : SDK S3 dans Next.js, credentials serveur dans Clever Cloud, sans variable `NEXT_PUBLIC_*`.
+- Images : proxy via route API allowlistée, pas d’URLs signées. Aucun chemin `curated/` ni `fichier_origine` exposé au navigateur.
+- Auth : Basic Auth facultative, calquée sur `DEMO_USER` / `DEMO_PASSWORD` de Gradio.
+- Périmètre : explicabilité et POC ONNX restent hors phase 2.
+
+## 10. Références
 
 - [`demo/app.py`](../../demo/app.py) — comportement de référence.
 - [`demo/propositions.py`](../../demo/propositions.py) — règles de matching.

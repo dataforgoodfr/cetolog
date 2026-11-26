@@ -1,15 +1,27 @@
 import { photoLabel } from "@/demo/contract";
-import { getDemoPayload } from "@/demo/get-demo";
+import { getDemoPayload, resolveImageKey } from "@/demo/get-demo";
+import { readObject } from "@/demo/s3";
 
-function escapeXml(value: string): string {
-  const escaped: Record<string, string> = {
-    "<": "&lt;",
-    ">": "&gt;",
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;",
-  };
-  return value.replace(/[<>&"']/g, (char) => escaped[char] ?? char);
+const CONTENT_TYPES: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+function contentType(key: string): string {
+  const extension = key.split(".").at(-1)?.toLowerCase() ?? "";
+  return CONTENT_TYPES[extension] ?? "application/octet-stream";
+}
+
+function text(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 export async function GET(
@@ -17,23 +29,24 @@ export async function GET(
   { params }: { params: Promise<{ imageId: string }> },
 ) {
   const { imageId } = await params;
+  // Le contrat est la source de vérité : aucun identifiant hors allowlist n'est résolu.
+  const payload = await getDemoPayload();
+  if (!photoLabel(payload, imageId)) return text("Photo inconnue", 404);
+  const key = resolveImageKey(imageId);
+  if (!key) return text("Photo inconnue", 404);
 
-  // Seuls les identifiants du contrat sont servis : pas d'accès arbitraire au bucket.
-  const label = photoLabel(await getDemoPayload(), imageId);
-  if (!label) {
-    return new Response("Photo fictive inconnue", {
-      status: 404,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
+  try {
+    const bytes = await readObject(key);
+    // Le SDK renvoie un Uint8Array valide comme BodyInit à l'exécution.
+    return new Response(bytes as unknown as BodyInit, {
+      headers: {
+        "Content-Type": contentType(key),
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
     });
+  } catch {
+    // Ne pas renvoyer la clé S3 : elle peut contenir un nom de photographe.
+    return text("Photo indisponible", 503);
   }
-
-  const title = escapeXml(label);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="260" viewBox="0 0 400 260"><title>${title}</title><rect x="0.5" y="0.5" width="399" height="259" fill="#fff" stroke="#000"/><text x="200" y="128" text-anchor="middle" font-family="monospace" font-size="16" fill="#000">${title}</text><text x="200" y="152" text-anchor="middle" font-family="monospace" font-size="12" fill="#000">photo fictive</text></svg>`;
-
-  return new Response(svg, {
-    headers: {
-      "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
-    },
-  });
 }

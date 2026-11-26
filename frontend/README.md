@@ -32,7 +32,7 @@ npm run format        # Formater les fichiers avec Prettier
 npm run format:check  # Vérifier le formatage sans modifier les fichiers
 ```
 
-## Démo option A (données réelles, vignettes fictives)
+## Démo option A (données et photos réelles)
 
 La page d’accueil reproduit le parcours de la démo Gradio. Le contrat vient du bucket : `derived/propositions/*.csv` et les deux `photos.csv`. Aucun `.npy`, modèle ou calcul de cosinus n’est lu dans le frontend.
 
@@ -43,7 +43,7 @@ Après `npm run dev` :
 - `/` : choix d’un individu, photos du best-of, 10 candidats et catalogue paginé par 12 ;
 - `/?individu=IND2&page=2` : lien direct vers un individu et une page du catalogue ;
 - `/api/demo` : contrat JSON avec `Cache-Control: no-store` ;
-- `/api/demo/photos/<imageId>` : vignette SVG tant que le proxy d’images n’est pas branché. Un identifiant inconnu renvoie 404.
+- `/api/demo/photos/<imageId>` : photo résolue côté serveur depuis le bucket. Un identifiant inconnu renvoie 404, une photo absente du bucket renvoie 503. Aucun chemin `curated/` n’apparaît dans l’URL ni dans la réponse.
 
 Reproduction manuelle rapide :
 
@@ -51,7 +51,8 @@ Reproduction manuelle rapide :
 2. vérifier que `IND2` arrive avant `IND10`, et que `?page=99` ramène à la dernière page ;
 3. vérifier qu’aucun chemin `curated/` ni `fichier_origine` n’apparaît dans le JSON ;
 4. retirer une variable S3 : la page affiche un message d’erreur sans endpoint ni bucket ;
-5. ouvrir `/api/demo/photos/inconnu` : la route renvoie 404.
+5. ouvrir une vignette depuis la page : l’en-tête `Content-Type` est `image/jpeg` ou `image/png`, et `Cache-Control: private, no-store` ;
+6. ouvrir `/api/demo/photos/inconnu` : la route renvoie 404.
 
 Le style wireframe est uniquement dans `src/app/globals.css`, importé par `src/app/layout.tsx`. Supprimer cet import suffit à retirer tout le style sans modifier la structure JSX.
 
@@ -61,7 +62,7 @@ Comme la démo Gradio, l’accès est ouvert tant que `DEMO_PASSWORD` est absent
 
 Vérification manuelle : avec les variables définies, `curl -i http://localhost:3000/` renvoie `401` et un en-tête `WWW-Authenticate` ; `curl -u miraceti:<mot-de-passe> -i http://localhost:3000/api/demo` renvoie `200` avec `Cache-Control: no-store`.
 
-Limites connues : les vignettes restent des SVG fictifs, pas d’explicabilité et aucun calcul ML dans le frontend. Le proxy d’images S3 est la prochaine étape.
+Limites connues : pas d’explicabilité et aucun calcul ML dans le frontend. Les photos sont streamées via la route API, sans URL signée ni cache public.
 
 ## Déploiement sur Clever Cloud
 

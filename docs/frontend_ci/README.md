@@ -11,13 +11,23 @@ Variables renseignées dans la console Clever Cloud :
 | `CC_NODE_DEV_DEPENDENCIES` | `install` (le build a besoin de `typescript`) |
 | `CC_POST_BUILD_HOOK` | `cd frontend && npm run build` (Clever Cloud ne lance pas le build seul) |
 | `NODE_ENV` | `production` |
+| `S3_ENDPOINT_URL` | endpoint Cellar (serveur uniquement) |
+| `S3_REGION` | région du bucket |
+| `S3_BUCKET` | bucket privé (valeur dans la console) |
+| `AWS_ACCESS_KEY_ID` | identifiant de lecture |
+| `AWS_SECRET_ACCESS_KEY` | clé de lecture |
+| `DEMO_USER` | utilisateur de la démo (par défaut `miraceti`) |
+| `DEMO_PASSWORD` | active l’auth basique ; sans valeur, la démo reste ouverte |
+| `DEMO_PROPOSITIONS_KEY` | facultatif : figer le CSV dans `derived/propositions/` |
+
+Ces variables ne sont jamais préfixées `NEXT_PUBLIC_` : elles sont lues uniquement par le serveur Next.js. Les valeurs de production restent dans la console Clever Cloud, pas dans le dépôt.
 
 Secrets GitHub de la CI : `CLEVER_TOKEN`, `CLEVER_SECRET` et `CLEVER_APP_ID_FRONTEND`.
 
 **Après un changement de variable** (surtout `NEXT_PUBLIC_*`, figées au build, ou `CC_NODE_VERSION`) : un simple restart garde l'ancien build. Reconstruire avec le bouton *Re-build and restart* de la console, ou :
 
 ```bash
-clever restart --without-cache --alias cetolog-frontend
+clever restart --without-cache --alias cetolog-web
 ```
 
 Les nouveaux commits, eux, sont toujours reconstruits en entier.

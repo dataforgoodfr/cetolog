@@ -4,8 +4,9 @@ export type CatalogueSide = "D" | "G";
 export interface DemoPhoto {
   individu: string;
   cote: Side;
-  fichier_origine: string;
-  /** Identifiant opaque : la phase 2 le résoudra côté serveur vers le bucket. */
+  /** Nom de fichier possiblement personnel : absent des données réelles. */
+  fichier_origine?: string;
+  /** Identifiant opaque résolu côté serveur vers le bucket, jamais un chemin brut. */
   imageId: string;
   sha256?: string;
 }
@@ -46,7 +47,8 @@ export function formatScore(score: number | undefined): string {
 
 /** Même ordre que `by_number` dans la démo : IND2 avant IND10. */
 export function byNumber(a: string, b: string): number {
-  return a.localeCompare(b, "fr", { numeric: true });
+  const digits = (value: string) => Number(value.replace(/\D/g, "") || 0);
+  return digits(a) - digits(b) || a.localeCompare(b, "fr");
 }
 
 /** Ne renvoie que les identifiants présents dans le contrat, jamais un chemin brut. */

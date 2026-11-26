@@ -10,7 +10,8 @@ export default function Error({
     <main className="demo">
       <h1>Erreur</h1>
       <p className="demo-empty">
-        La démo n’a pas pu charger ses données fictives.
+        La démo n’a pas pu charger ses données. Vérifier la configuration S3
+        côté serveur.
       </p>
       <button type="button" className="demo-button" onClick={reset}>
         Réessayer

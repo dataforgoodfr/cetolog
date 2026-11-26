@@ -19,7 +19,7 @@ export async function GET(
   const { imageId } = await params;
 
   // Seuls les identifiants du contrat sont servis : pas d'accès arbitraire au bucket.
-  const label = photoLabel(getDemoPayload(), imageId);
+  const label = photoLabel(await getDemoPayload(), imageId);
   if (!label) {
     return new Response("Photo fictive inconnue", {
       status: 404,

@@ -64,6 +64,18 @@ button {
   margin: 0;
 }
 
+/* Même proportion que le Row(Column scale=2, Column scale=3) de Gradio. */
+.demo-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.demo-column {
+  min-width: 0;
+}
+
 .demo-section {
   margin: 0 0 1.5rem;
 }
@@ -190,8 +202,12 @@ button {
   gap: 1rem;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 48rem) {
   .demo {
     padding: 1rem;
+  }
+
+  .demo-columns {
+    grid-template-columns: 1fr;
   }
 }

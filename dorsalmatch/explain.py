@@ -73,12 +73,21 @@ def last_feature_map(network, x) -> tuple[torch.Tensor, torch.Tensor]:
     return embedding, found["map"]
 
 
+# Carte en (N, C, H, W) : les transformers (Swin) la rendent en (N, H, W, C)
+def channels_first(network, feature_map: torch.Tensor) -> torch.Tensor:
+    if getattr(network, "channels_last", False):
+        return feature_map.permute(0, 3, 1, 2)
+    return feature_map
+
+
 # 2. Grad-CAM : les zones dont le gradient fait monter le cosinus, en un seul passage
 def grad_cam(embedder, x, reference) -> np.ndarray:
     with torch.enable_grad():
         embedding, feature_map = last_feature_map(embedder.network, x)
         cosine = F.normalize(embedding.float(), dim=1)[0] @ reference
         (gradient,) = torch.autograd.grad(cosine, feature_map)
+    feature_map = channels_first(embedder.network, feature_map)
+    gradient = channels_first(embedder.network, gradient)
     weights = gradient.mean(dim=(2, 3), keepdim=True)
     return F.relu((weights * feature_map).sum(dim=1))[0].detach().float().cpu().numpy()
 
@@ -130,7 +139,11 @@ def deletion_curve(
 def reciprocal_matches(
     embedder, x, y, links: int = LINKS
 ) -> list[tuple[tuple[float, float], tuple[float, float], float]]:
-    maps = [last_feature_map(embedder.network, tensor)[1][0] for tensor in (x, y)]
+    network = embedder.network
+    maps = [
+        channels_first(network, last_feature_map(network, tensor)[1])[0]
+        for tensor in (x, y)
+    ]
     (height_a, width_a), (height_b, width_b) = (
         feature_map.shape[-2:] for feature_map in maps
     )

@@ -45,14 +45,19 @@ def known_pairs(
 
 
 # 2. Chaque paire expliquée : une image à revoir avec l'équipe, une ligne du résumé
-def run(count: int = PAIRS, method: str = "occlusion", data: Path = DATA) -> Path:
+def run(
+    count: int = PAIRS,
+    method: str = "occlusion",
+    data: Path = DATA,
+    model: str = MODEL,
+) -> Path:
     from dorsalmatch import Embedder
     from dorsalmatch.explain import explain, side_by_side
 
     manifest = max((data / "curated" / KIND / "manifests").glob("*.csv"))
-    output = data / "derived" / "explications" / KIND / manifest.stem / method
+    output = data / "derived" / "explications" / KIND / manifest.stem / model / method
     output.mkdir(parents=True, exist_ok=True)
-    embedder = Embedder(MODEL)
+    embedder = Embedder(model)
 
     rows = []
     pairs = known_pairs(read_photos(manifest, KIND, data), count)
@@ -89,6 +94,7 @@ def run(count: int = PAIRS, method: str = "occlusion", data: Path = DATA) -> Pat
 
 # uv run --group ml python -m pipeline.explanations
 # uv run --group ml python -m pipeline.explanations --pairs 30 --method gradcam
+# uv run --group ml python -m pipeline.explanations --model megadescriptor
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Explique des paires connues de l'historique, "
@@ -101,7 +107,10 @@ if __name__ == "__main__":
         "--method", choices=("occlusion", "gradcam"), default="occlusion"
     )
     parser.add_argument(
+        "--model", default=MODEL, help=f"modèle de dorsalmatch (défaut : {MODEL})"
+    )
+    parser.add_argument(
         "--data", type=Path, default=DATA, help=f"dossier des données (défaut : {DATA})"
     )
     args = parser.parse_args()
-    print(f"Résumé : {run(args.pairs, args.method, args.data)}")
+    print(f"Résumé : {run(args.pairs, args.method, args.data, args.model)}")

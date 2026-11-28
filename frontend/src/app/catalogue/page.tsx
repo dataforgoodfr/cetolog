@@ -1,3 +1,4 @@
+import { CatalogFiltersBar } from "@/components/catalog/CatalogFiltersBar";
 import { CatalogHeader } from "@/components/catalog/CatalogHeader";
 import { CatalogResults } from "@/components/catalog/CatalogResults";
 import { Sidebar } from "@/components/catalog/Sidebar";
@@ -19,6 +20,7 @@ export default async function CataloguePage({
       <Sidebar />
       <div className="catalog-content">
         <CatalogHeader />
+        <CatalogFiltersBar filters={query} />
         <CatalogResults items={catalogPage.items} />
       </div>
     </main>

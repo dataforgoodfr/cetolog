@@ -1,0 +1,176 @@
+/* Wireframe du frame Figma : supprimer l'import dans layout.tsx pour retirer ce style. */
+:root {
+  --catalog-sidebar-width: 240px;
+  --catalog-border: #222222;
+  --catalog-muted: #666666;
+  --catalog-line: #dddddd;
+  --catalog-gap: 24px;
+}
+
+.catalog-screen {
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
+  color: var(--catalog-border);
+}
+
+.catalog-sidebar {
+  width: var(--catalog-sidebar-width);
+  flex: 0 0 var(--catalog-sidebar-width);
+  border-right: 2px solid var(--catalog-border);
+  padding: var(--catalog-gap) 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--catalog-gap);
+}
+
+.catalog-logo {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.catalog-matching-cta,
+.catalog-import,
+.catalog-new-individual {
+  border: 2px solid var(--catalog-border);
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.catalog-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.catalog-nav a {
+  font-weight: 600;
+}
+
+.catalog-nav span,
+[aria-disabled="true"] {
+  color: var(--catalog-muted);
+}
+
+.catalog-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--catalog-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--catalog-gap);
+}
+
+.catalog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.catalog-header h1 {
+  font-size: 24px;
+}
+
+.catalog-header p {
+  color: var(--catalog-muted);
+  margin-top: 4px;
+}
+
+.catalog-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.catalog-search,
+.catalog-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.catalog-filters input,
+.catalog-filters select {
+  border: 1px solid var(--catalog-line);
+  font: inherit;
+  min-width: 220px;
+  padding: 8px 10px;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.catalog-card {
+  border: 1px solid var(--catalog-line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.catalog-card-photo {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  background: #f2f2f2;
+}
+
+.catalog-card-code {
+  font-weight: 700;
+}
+
+.catalog-card-observations {
+  color: var(--catalog-muted);
+  font-size: 13px;
+}
+
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.catalog-pagination a {
+  text-decoration: underline;
+}
+
+.catalog-results-empty,
+.catalog-results-error,
+.catalog-loading,
+.catalog-error-boundary {
+  border: 1px solid var(--catalog-line);
+  padding: var(--catalog-gap);
+}
+
+@media (max-width: 1100px) {
+  .catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .catalog-screen {
+    flex-direction: column;
+  }
+
+  .catalog-sidebar {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 2px solid var(--catalog-border);
+  }
+
+  .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

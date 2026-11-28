@@ -158,6 +158,42 @@ Typage des frontières :
 - route image : `context: { params: Promise<{ imageId: string }> }` (les `params` sont une Promise dans Next 16), `Promise<Response>` en retour ;
 - `tsconfig.json` reste en `strict: true`, sans `any` dans le code de l'écran ; les seules conversions se font après validation explicite aux frontières (URL, JSON, lignes SQL).
 
+## Recommandations pour l'API définitive (plus tard)
+
+Relevé en lecture seule sur `cetolog-db-dev` : `pg_trgm`, `unaccent`, `citext` et `vector` sont déjà installés ; les seuls index sont `individuals(id)`, `individuals(code)` et `photos(id)`. Il n'y a **aucun index** sur `photos.individual_id`, `side`, `date`, `sha256` ou `delivery`, toutes les colonnes textuelles sont nullable, et 6 groupes de `sha256` dupliqués représentent 6 lignes redondantes. La requête d'écran actuelle fait un `DISTINCT ON` + comptage + `ILIKE` sans index : correct à 1 529 individus, fragile ensuite.
+
+### 1. Séparer écriture et lecture (CQRS-lite)
+
+- **Écriture** : l'ingestion Python (Alembic + script de chargement) reste l'unique propriétaire des tables sources.
+- **Lecture** : une vue `catalog_cards` expose une ligne par individu avec `individual_id`, `code`, `reference_photo_id`, `last_observation_date`, `photo_count` et `search_text`. Le gateway ne requête que cette vue.
+- Commencer par une **vue simple** ; passer en `MATERIALIZED VIEW` avec index uniquement si la latence devient un problème. Le contrat d'API ne change pas dans l'un ou l'autre cas.
+- Index utiles côté-source : `(individual_id, date desc)` pour le `DISTINCT ON`, `(last_observation_date desc, code)` pour le tri, `gin (search_text gin_trgm_ops)` pour la recherche.
+
+### 2. Compléter le modèle dans une migration Alembic dédiée
+
+- `deliveries(id, label, imported_at, manifest_key, is_active)` et `photos.delivery_id` : la livraison devient une entité, plus une simple chaîne libre.
+- `sites(id, code, label)` et `photos.site_id` : permet de filtrer par site sans comparer des textes.
+- `observations(id, individual_id, date, site_id)` et `photos.observation_id` : le compteur d'observations deviendra un vrai `count(*)` le jour où Miraceti valide la règle. Le placeholder `X observations` reste jusqu'à cette migration.
+- `photos` : ajouter `storage_key` (unique, non nul), `content_type`, `width`, `height`, `is_reference`, index partiel `unique (individual_id) where is_reference` et index sur `sha256`. La règle droite puis gauche est appliquée **à l'ingestion**, pas à chaque requête d'affichage.
+- `individuals` : ajouter `display_name` (nullable) et `search_text` entretenu par trigger (`lower(unaccent(code || ' ' || display_name))`). `unaccent` n'étant pas immutable, on évite la colonne générée et l'index d'expression direct.
+- `ingest_errors` : y placer les 7 noms non reconnus (`TTGC2050`, `TUTR05558`, `TUTR1260-fa`…) au lieu de laisser `individual_id` à `NULL`. Une fois la table nettoyée, `photos.individual_id` peut devenir `NOT NULL`.
+
+Aucune modification de la migration déjà fusionnée `0879077b4f35` ; une seule personne applique les migrations ; `spatial_ref_sys` reste intact.
+
+### 3. Recherche en deux niveaux
+
+- **Niveau 1, suffisant pour le catalogue** : préfixe du code + trigramme sur `search_text` avec `pg_trgm` (`search_text % :q` ou `ILIKE '%:q%'`), insensible aux accents grâce à `unaccent`. Le placeholder `Identifiant, nom...` suppose d'ajouter `display_name` avant de promettre la recherche par nom.
+- **Niveau 2, plus tard seulement** : `tsvector` entretenu par trigger pour la recherche plein texte (config `french`) et, si le besoin se confirme, `pgvector` pour une similarité sémantique. La extension `vector` est déjà là, mais elle ne doit pas servir à filtrer le catalogue.
+- Garder un tri déterministe `last_observation_date desc nulls last, code asc` pour que la pagination ne saute pas de carte.
+
+### 4. Contrat d'API stable
+
+- Versionner les routes : `/api/v1/catalog/individuals`, `/api/v1/catalog/individuals/[code]` (fiche individu du frame 6), `/api/v1/catalog/photos/[id]`, puis `/observations` et `/filters/sites` quand les tables existent.
+- Conserver l'enveloppe `{ items, total, page, pageSize, totalPages }` et les types `src/types/catalog.ts` comme source de vérité tant que l'API est Next. Le jour de FastAPI, générer les types TypeScript depuis le schéma OpenAPI (`openapi-typescript`) et garder `CatalogGateway` inchangé : aucun composant ne doit bouger.
+- Erreurs typées `CatalogErrorBody` (400 query invalide, 404 inconnu, 503 source indisponible), `ETag` sur les listes, `Cache-Control: private, no-store` sur les images.
+- Rôle PostgreSQL **lecture seule** pour l'API ; aucune écriture depuis le frontend ; pool dimensionné pour l'offre DEV à 5 connexions.
+- Si les pages deviennent profondes, remplacer `OFFSET` par une pagination par curseur sur `(last_observation_date, code)` sans changer le contrat d'affichage.
+
 ## Découpage en composants et réactivité
 
 ### Source de vérité unique
@@ -237,21 +273,19 @@ Un retour navigateur est géré par le routeur : l'URL change, la page serveur e
 - Clés React stables : le `code` de l'individu, jamais l'index du tableau.
 - Vignettes `<img loading="lazy" decoding="async" width height>` servies par l'URL opaque du gateway (aujourd'hui `/api/catalog/photos/[imageId]`), sans optimisation `next/image` pour ne pas contourner l'allowlist serveur.
 
-## Phase de test et anti-régression
+## Phase de test des composants
 
-Objectif : **toute fonction utilitaire et tout composant livré arrive avec son test**. Le contrôle manuel sur staging complète ces tests, il ne les remplace pas.
+Périmètre volontairement limité pour l'instant : **on teste les composants React, pas l'API ni les fonctions utilitaires**. Le parseur de query, le mapping SQL et les route handlers sont validés par la reproduction manuelle sur staging ; des tests unitaires pourront être ajoutés plus tard si le contrat se stabilise.
 
 ### Harnais (PR dédiée, avant l'UI)
 
-Dépendances de dev : `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`. Scripts : `test` (`vitest run`), `test:watch`, `test:coverage` avec `@vitest/coverage-v8`.
+Dépendances de dev : `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`. Scripts : `test` (`vitest run`), `test:watch`, `test:coverage` avec `@vitest/coverage-v8`.
 
 ```ts
 // frontend/vitest.config.ts
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
@@ -264,58 +298,7 @@ export default defineConfig({
 import "@testing-library/jest-dom/vitest";
 ```
 
-`tsconfig.json` inclut `vitest.setup.ts` et déclare `types: ["vitest/globals", "@testing-library/jest-dom"]`. La CI ajoute `npm test` au job `build-frontend`, avant `npm run build` : une régression bloque la PR. Le nettoyage DOM entre les tests est automatique avec `@testing-library/react`.
-
-### Tests unitaires des utilitaires
-
-| Fichier                      | Cas couverts                                                                                                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `params.test.ts`             | Valeurs par défaut, tri inconnu rejeté, page négative / hors limites ramenée à 1, tableaux de `searchParams` ignorés, encodage des accents dans l'URL |
-| `reference-photo.test.ts`    | Côté `D` préféré à `G`, départage par date décroissante, dates `null` en dernier, individu sans photo exclu                                           |
-| `map-catalog-row.test.ts`    | `code` conservé tel quel (`TUTR0008`), `alt`, `observationsLabel`, URL d'image opaque                                                                 |
-| `parse-catalog-page.test.ts` | Payload valide accepté, champ manquant ou type invalide rejeté (frontière FastAPI future)                                                             |
-| `resolve-s3-key.test.ts`     | Écart de livraison, passage `D/G` → `DD/DG`, nom de fichier normalisé, clé inconnue → `null`                                                          |
-
-Exemple concret, dans la PR `feat/catalog-api` :
-
-```ts
-import { describe, expect, it } from "vitest";
-import { buildCatalogUrl, parseCatalogQuery } from "./params";
-
-describe("parseCatalogQuery", () => {
-  it("applique les valeurs par défaut", () => {
-    expect(parseCatalogQuery({})).toEqual({
-      search: "",
-      sort: "lastObservation",
-      page: 1,
-      pageSize: 15,
-    });
-  });
-
-  it("ignore un tri inconnu et une page invalide", () => {
-    expect(parseCatalogQuery({ sort: "autre", page: "-2" })).toMatchObject({
-      sort: "lastObservation",
-      page: 1,
-    });
-  });
-});
-
-describe("buildCatalogUrl", () => {
-  it("conserve les filtres et remet la page à 1", () => {
-    const url = new URL(
-      buildCatalogUrl({
-        search: "baie",
-        sort: "lastObservation",
-        page: 1,
-        pageSize: 15,
-      }),
-      "http://localhost",
-    );
-    expect(url.searchParams.get("search")).toBe("baie");
-    expect(url.searchParams.get("page")).toBe("1");
-  });
-});
-```
+`tsconfig.json` inclut `vitest.setup.ts` et déclare `types: ["vitest/globals", "@testing-library/jest-dom"]`. La CI ajoute `npm test` au job `build-frontend`, avant `npm run build` : une régression visuelle ou fonctionnelle bloque la PR. Le nettoyage DOM entre les tests est automatique avec `@testing-library/react`.
 
 ### Tests de composants
 
@@ -362,11 +345,6 @@ describe("Pagination", () => {
 });
 ```
 
-### Tests des route handlers et du proxy
-
-- `/api/catalog/individuals` : gateway mocké → 200 avec un corps conforme à `CatalogPage`, paramètres de recherche / tri / page transmis au gateway, 400 avec `CatalogErrorBody` sur requête invalide, 503 si la source est indisponible.
-- `/api/catalog/photos/[imageId]` : 404 hors allowlist, 503 si l'objet manque, `Content-Type: image/jpeg`, `Cache-Control: private, no-store`.
-
 ### Vérification manuelle (en plus)
 
 Après déploiement staging : `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, la page `/catalogue` en 200, et un aller-retour recherche → pagination → retour navigateur sans perte des filtres.
@@ -374,15 +352,15 @@ Après déploiement staging : `GET /api/catalog/individuals` (401 sans identifia
 ## Découpage en PR
 
 1. `docs/catalogue-contract` — ce plan, les décisions et le contrat d'API.
-2. `test/catalog-harness` — Vitest + Testing Library, scripts `npm test`, `vitest.config.ts`, `vitest.setup.ts`, ajout de `npm test` à la CI, plus un test de smoke du harnais.
-3. `feat/catalog-api` — types sérialisables dans `src/types/catalog.ts`, interface `CatalogGateway`, implémentation PostgreSQL (`DATABASE_URL` depuis l'add-on), route `/api/catalog/individuals` comme adaptateur. Tests : `params`, mapping, réponse de route. Reproduction manuelle documentée : recherche, tri, pagination, cas vide.
-4. `feat/catalog-images` — résolveur de clé + route proxy allowlistée, 404 hors contrat, 503 si objet absent. Tests : résolution de clé et route.
-5. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, pagination du groupe `Actions`, états loading / empty / error. Tests de chaque composant. Elle peut être découpée en trois PR si le diff grandit : (a) squelette serveur + grille à partir des props, (b) barre de filtres et navigation URL, (c) carte, vignette et pagination.
+2. `test/catalog-harness` — Vitest + Testing Library, scripts `npm test`, `vitest.config.ts`, `vitest.setup.ts`, ajout de `npm test` à la CI, plus un test de composant minimal pour valider le harnais.
+3. `feat/catalog-api` — types sérialisables dans `src/types/catalog.ts`, interface `CatalogGateway`, implémentation PostgreSQL (`DATABASE_URL` depuis l'add-on), route `/api/catalog/individuals` comme adaptateur. Validation manuelle documentée : recherche, tri, pagination, cas vide.
+4. `feat/catalog-images` — résolveur de clé + route proxy allowlistée, 404 hors contrat, 503 si objet absent. Validation manuelle du proxy.
+5. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, pagination du groupe `Actions`, états loading / empty / error. **Chaque composant livré avec son test.** Elle peut être découpée en trois PR si le diff grandit : (a) squelette serveur + grille à partir des props, (b) barre de filtres et navigation URL, (c) carte, vignette et pagination.
 6. `style/catalog-wireframe` — tokens du wireframe centralisés dans `globals.css`, suppressibles en retirant leur import du layout.
 7. `docs/catalog-env` — variables Clever Cloud, lien avec l'add-on PostgreSQL, rebuild.
 8. `feat/catalog-auth` (si nécessaire) — Basic Auth côté serveur, même comportement que la démo Gradio.
 
-Chaque PR reste ciblée, avec des commentaires courts expliquant le pourquoi. **Aucune PR de code n'est considérée terminée sans ses tests** : `npm run format:check`, `npm run lint`, `npm test` et `npm run build` doivent passer localement avant ouverture.
+Chaque PR reste ciblée, avec des commentaires courts expliquant le pourquoi. **Aucun composant n'est considéré terminé sans son test** ; l'API et les utilitaires restent hors périmètre test pour cette phase. `npm run format:check`, `npm run lint`, `npm test` et `npm run build` doivent passer localement avant ouverture.
 
 ## Dernière étape : PR globale et déploiement staging
 
@@ -413,6 +391,6 @@ clever deploy -a <app-staging>
 - **Recommandé** : créer `cetolog-web-staging`, y renseigner `DATABASE_URL` (add-on `cetolog-db-dev`), les variables S3 et l'auth, puis déployer la branche d'intégration dessus. Cela évite de toucher `cetolog-web`.
 - **Temporaire** : déployer la branche sur `cetolog-web`, comme pour la PR #90, en prévenant l'équipe.
 
-Vérifications attendues après déploiement : CI verte avec `npm test`, `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, la page `/catalogue` en 200 et l'aller-retour recherche → pagination → retour navigateur. La PR meta est fermée après le test ; les PR individuelles restent la source de vérité pour la revue.
+Vérifications attendues après déploiement : CI verte avec `npm test` (tests de composants), `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, la page `/catalogue` en 200 et l'aller-retour recherche → pagination → retour navigateur. La PR meta est fermée après le test ; les PR individuelles restent la source de vérité pour la revue.
 
 Le déploiement n'est pas encore exécuté : il n'existe pour l'instant que ce plan, sans code d'API ni d'écran à tester.

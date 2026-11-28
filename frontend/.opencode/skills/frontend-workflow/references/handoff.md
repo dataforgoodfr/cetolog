@@ -4,21 +4,26 @@
 
 ```md
 ## Contexte
+
 Pourquoi ce changement existe.
 
 ## Changements
+
 Ce qui a changé, en quelques puces.
 
 ## Comment tester
+
 Commandes et étapes concrètes. Ajouter des captures si l’UI change.
 
 ## Checks
+
 - lint :
 - format:check :
 - build / typecheck :
 - tests :
 
 ## Limites et suite à faire
+
 Lacunes connues, non-objectifs assumés, prochaine étape.
 ```
 

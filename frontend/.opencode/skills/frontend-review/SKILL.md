@@ -56,12 +56,15 @@ Depuis `frontend/` :
 
 ```md
 ## Bloquant
+
 - [fichier:ligne] Problème. Correction proposée.
 
 ## À améliorer
+
 - [fichier:ligne] Problème. Correction proposée.
 
 ## Optionnel
+
 - [fichier:ligne] Idée ou détail.
 ```
 

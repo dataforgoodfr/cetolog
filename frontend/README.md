@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Cetolog (`frontend/`)
 
-## Getting Started
+Application web **Next.js** (TypeScript, App Router) du projet Cetolog.
 
-First, run the development server:
+## Prérequis
+
+- [Node.js](https://nodejs.org/) (version LTS recommandée)
+- `npm`
+
+## Installation et lancement en local
+
+Depuis le dossier `frontend/` :
 
 ```bash
+# Installer les dépendances
+npm install
+
+# Lancer le serveur de développement
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commandes utiles
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev           # Serveur de développement (http://localhost:3000)
+npm run build         # Build de production
+npm run start         # Serveur de production (après build), écoute sur 0.0.0.0:$PORT
+npm run lint          # Vérification ESLint
+npm run format        # Formater les fichiers avec Prettier
+npm run format:check  # Vérifier le formatage sans modifier les fichiers
+```
 
-## Learn More
+## Déploiement sur Clever Cloud
 
-To learn more about Next.js, take a look at the following resources:
+### 1) Installer Clever Tools
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Option recommandée (si npm est installé)
+npm install -g clever-tools
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Vérifier l'installation
+clever version
+```
 
-## Deploy on Vercel
+### 2) Se connecter à Clever Cloud
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+clever login
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+La commande ouvre le navigateur pour l’authentification. Pour vérifier le compte connecté :
+
+```bash
+clever profile
+```
+
+### 3) Lier le repo à l’application Clever Cloud
+
+Informations de l’application **cetolog-web** :
+
+- **Alias** : `cetolog-web`
+- **ID** : `app_78d5280a-4316-48dd-90b1-4e61132eb0ab`
+
+Depuis la racine du repo :
+
+```bash
+cd /Users/dams/Projects/cetolog
+clever link app_78d5280a-4316-48dd-90b1-4e61132eb0ab
+```
+
+Vérifier le lien :
+
+```bash
+clever status
+```
+
+### 6) Déployer une branche
+
+`clever deploy` déploie le **commit Git courant**. Pour déployer une branche, place-toi dessus, commite tes changements, puis déploie :
+
+```bash
+# Depuis la racine du repo
+git checkout nom-de-ma-branche
+git add .
+git commit -m "mon message de commit"
+clever deploy
+```
+
+Suivre les logs de déploiement :
+
+```bash
+clever logs
+```
+
+## Remarques
+
+- Le fichier `.env` local ne doit pas être commité. Les variables de déploiement Clever Cloud se configurent côté Clever Cloud, pas dans le repo.
+- En cas de souci de déploiement, vérifier d’abord : `APP_FOLDER`, la commande `start`, la version Node, le hook de build et les logs Clever Cloud.

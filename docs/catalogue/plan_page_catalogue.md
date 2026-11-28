@@ -237,17 +237,152 @@ Un retour navigateur est géré par le routeur : l'URL change, la page serveur e
 - Clés React stables : le `code` de l'individu, jamais l'index du tableau.
 - Vignettes `<img loading="lazy" decoding="async" width height>` servies par l'URL opaque du gateway (aujourd'hui `/api/catalog/photos/[imageId]`), sans optimisation `next/image` pour ne pas contourner l'allowlist serveur.
 
+## Phase de test et anti-régression
+
+Objectif : **toute fonction utilitaire et tout composant livré arrive avec son test**. Le contrôle manuel sur staging complète ces tests, il ne les remplace pas.
+
+### Harnais (PR dédiée, avant l'UI)
+
+Dépendances de dev : `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`. Scripts : `test` (`vitest run`), `test:watch`, `test:coverage` avec `@vitest/coverage-v8`.
+
+```ts
+// frontend/vitest.config.ts
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+  },
+});
+```
+
+```ts
+// frontend/vitest.setup.ts
+import "@testing-library/jest-dom/vitest";
+```
+
+`tsconfig.json` inclut `vitest.setup.ts` et déclare `types: ["vitest/globals", "@testing-library/jest-dom"]`. La CI ajoute `npm test` au job `build-frontend`, avant `npm run build` : une régression bloque la PR. Le nettoyage DOM entre les tests est automatique avec `@testing-library/react`.
+
+### Tests unitaires des utilitaires
+
+| Fichier                      | Cas couverts                                                                                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `params.test.ts`             | Valeurs par défaut, tri inconnu rejeté, page négative / hors limites ramenée à 1, tableaux de `searchParams` ignorés, encodage des accents dans l'URL |
+| `reference-photo.test.ts`    | Côté `D` préféré à `G`, départage par date décroissante, dates `null` en dernier, individu sans photo exclu                                           |
+| `map-catalog-row.test.ts`    | `code` conservé tel quel (`TUTR0008`), `alt`, `observationsLabel`, URL d'image opaque                                                                 |
+| `parse-catalog-page.test.ts` | Payload valide accepté, champ manquant ou type invalide rejeté (frontière FastAPI future)                                                             |
+| `resolve-s3-key.test.ts`     | Écart de livraison, passage `D/G` → `DD/DG`, nom de fichier normalisé, clé inconnue → `null`                                                          |
+
+Exemple concret, dans la PR `feat/catalog-api` :
+
+```ts
+import { describe, expect, it } from "vitest";
+import { buildCatalogUrl, parseCatalogQuery } from "./params";
+
+describe("parseCatalogQuery", () => {
+  it("applique les valeurs par défaut", () => {
+    expect(parseCatalogQuery({})).toEqual({
+      search: "",
+      sort: "lastObservation",
+      page: 1,
+      pageSize: 15,
+    });
+  });
+
+  it("ignore un tri inconnu et une page invalide", () => {
+    expect(parseCatalogQuery({ sort: "autre", page: "-2" })).toMatchObject({
+      sort: "lastObservation",
+      page: 1,
+    });
+  });
+});
+
+describe("buildCatalogUrl", () => {
+  it("conserve les filtres et remet la page à 1", () => {
+    const url = new URL(
+      buildCatalogUrl({
+        search: "baie",
+        sort: "lastObservation",
+        page: 1,
+        pageSize: 15,
+      }),
+      "http://localhost",
+    );
+    expect(url.searchParams.get("search")).toBe("baie");
+    expect(url.searchParams.get("page")).toBe("1");
+  });
+});
+```
+
+### Tests de composants
+
+Avec `@testing-library/react` et `user-event`, en testant le comportement visible plutôt que l'implémentation :
+
+- `IndividualCard.test.tsx` : affiche `TUTR0008` (jamais `TT-0008`), image `loading="lazy"` avec l'URL opaque et un `alt`, texte `X observations` ;
+- `IndividualGrid.test.tsx` : 15 cartes dans l'ordre reçu, aucun avertissement React sur les clés, état vide distinct ;
+- `Pagination.test.tsx` : précédent désactivé en page 1, suivant désactivé à la dernière page, liens qui conservent `search` et `sort`, `aria-current="page"` ;
+- `CatalogFiltersBar.test.tsx` : input non contrôlé, `onChange` appelle `router.replace` avec `page: 1`, `isPending` pose `aria-busy` (routeur mocké) ;
+- `CatalogResults.test.tsx` : aiguillage résultat / vide / erreur selon les props du gateway.
+
+Exemple pour la pagination du groupe `Actions` :
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { Pagination } from "./Pagination";
+
+describe("Pagination", () => {
+  it("désactive le précédent en première page et garde les filtres", () => {
+    render(
+      <Pagination
+        page={1}
+        pageSize={15}
+        total={1529}
+        totalPages={102}
+        buildHref={(page) => `/catalogue?search=tutr&page=${page}`}
+      />,
+    );
+
+    expect(screen.getByText(/précédent/i)).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("link", { name: /suivant/i })).toHaveAttribute(
+      "href",
+      "/catalogue?search=tutr&page=2",
+    );
+    expect(screen.getByRole("link", { current: "page" })).toHaveAttribute(
+      "href",
+      "/catalogue?search=tutr&page=1",
+    );
+  });
+});
+```
+
+### Tests des route handlers et du proxy
+
+- `/api/catalog/individuals` : gateway mocké → 200 avec un corps conforme à `CatalogPage`, paramètres de recherche / tri / page transmis au gateway, 400 avec `CatalogErrorBody` sur requête invalide, 503 si la source est indisponible.
+- `/api/catalog/photos/[imageId]` : 404 hors allowlist, 503 si l'objet manque, `Content-Type: image/jpeg`, `Cache-Control: private, no-store`.
+
+### Vérification manuelle (en plus)
+
+Après déploiement staging : `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, la page `/catalogue` en 200, et un aller-retour recherche → pagination → retour navigateur sans perte des filtres.
+
 ## Découpage en PR
 
 1. `docs/catalogue-contract` — ce plan, les décisions et le contrat d'API.
-2. `feat/catalog-api` — types sérialisables dans `src/types/catalog.ts`, interface `CatalogGateway`, implémentation PostgreSQL (`DATABASE_URL` depuis l'add-on), route `/api/catalog/individuals` comme adaptateur. Reproduction manuelle documentée : recherche, tri, pagination, cas vide.
-3. `feat/catalog-images` — résolveur de clé + route proxy allowlistée, 404 hors contrat, 503 si objet absent.
-4. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, pagination du groupe `Actions`, états loading / empty / error. Elle peut être découpée en trois PR si le diff grandit : (a) squelette serveur + grille à partir des props, (b) barre de filtres et navigation URL, (c) carte, vignette et pagination.
-5. `style/catalog-wireframe` — tokens du wireframe centralisés dans `globals.css`, suppressibles en retirant leur import du layout.
-6. `docs/catalog-env` — variables Clever Cloud, lien avec l'add-on PostgreSQL, rebuild.
-7. `feat/catalog-auth` (si nécessaire) — Basic Auth côté serveur, même comportement que la démo Gradio.
+2. `test/catalog-harness` — Vitest + Testing Library, scripts `npm test`, `vitest.config.ts`, `vitest.setup.ts`, ajout de `npm test` à la CI, plus un test de smoke du harnais.
+3. `feat/catalog-api` — types sérialisables dans `src/types/catalog.ts`, interface `CatalogGateway`, implémentation PostgreSQL (`DATABASE_URL` depuis l'add-on), route `/api/catalog/individuals` comme adaptateur. Tests : `params`, mapping, réponse de route. Reproduction manuelle documentée : recherche, tri, pagination, cas vide.
+4. `feat/catalog-images` — résolveur de clé + route proxy allowlistée, 404 hors contrat, 503 si objet absent. Tests : résolution de clé et route.
+5. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, pagination du groupe `Actions`, états loading / empty / error. Tests de chaque composant. Elle peut être découpée en trois PR si le diff grandit : (a) squelette serveur + grille à partir des props, (b) barre de filtres et navigation URL, (c) carte, vignette et pagination.
+6. `style/catalog-wireframe` — tokens du wireframe centralisés dans `globals.css`, suppressibles en retirant leur import du layout.
+7. `docs/catalog-env` — variables Clever Cloud, lien avec l'add-on PostgreSQL, rebuild.
+8. `feat/catalog-auth` (si nécessaire) — Basic Auth côté serveur, même comportement que la démo Gradio.
 
-Chaque PR reste ciblée, avec des commentaires courts expliquant le pourquoi. Pas de runner de tests dans le frontend : documenter la reproduction manuelle jusqu'à l'ajout d'un harnais.
+Chaque PR reste ciblée, avec des commentaires courts expliquant le pourquoi. **Aucune PR de code n'est considérée terminée sans ses tests** : `npm run format:check`, `npm run lint`, `npm test` et `npm run build` doivent passer localement avant ouverture.
 
 ## Dernière étape : PR globale et déploiement staging
 
@@ -256,11 +391,12 @@ Une fois les PR ci-dessus prêtes, créer une branche d'intégration et une PR �
 ```bash
 cd /Users/dams/Projects/cetolog
 git switch -c test/catalogue-staging origin/main
-for b in docs/catalogue-contract feat/catalog-api feat/catalog-images \
-         feat/catalog-ui style/catalog-wireframe docs/catalog-env feat/catalog-auth; do
+for b in docs/catalogue-contract test/catalog-harness feat/catalog-api \
+         feat/catalog-images feat/catalog-ui style/catalog-wireframe \
+         docs/catalog-env feat/catalog-auth; do
   git merge --no-edit "$b"
 done
-cd frontend && npm run format:check && npm run lint && npm run build
+cd frontend && npm run format:check && npm run lint && npm test && npm run build
 git push -u origin test/catalogue-staging
 ```
 
@@ -277,6 +413,6 @@ clever deploy -a <app-staging>
 - **Recommandé** : créer `cetolog-web-staging`, y renseigner `DATABASE_URL` (add-on `cetolog-db-dev`), les variables S3 et l'auth, puis déployer la branche d'intégration dessus. Cela évite de toucher `cetolog-web`.
 - **Temporaire** : déployer la branche sur `cetolog-web`, comme pour la PR #90, en prévenant l'équipe.
 
-Vérifications attendues après déploiement : `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, et la page `/catalogue` en 200. La PR meta est fermée après le test ; les PR individuelles restent la source de vérité pour la revue.
+Vérifications attendues après déploiement : CI verte avec `npm test`, `GET /api/catalog/individuals` (401 sans identifiants si l'auth est active, puis 200), une vignette en `200 image/jpeg`, la page `/catalogue` en 200 et l'aller-retour recherche → pagination → retour navigateur. La PR meta est fermée après le test ; les PR individuelles restent la source de vérité pour la revue.
 
 Le déploiement n'est pas encore exécuté : il n'existe pour l'instant que ce plan, sans code d'API ni d'écran à tester.

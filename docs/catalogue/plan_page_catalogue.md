@@ -92,12 +92,69 @@ select i.code, r.original_filename, r.delivery
 
 Le pool PostgreSQL restera très petit (offre DEV à 5 connexions). Aucune écriture depuis le frontend.
 
+## Découpage en composants et réactivité
+
+### Source de vérité unique
+
+- L'URL est la seule source de vérité pour `search`, `sort` et `page` : pas de copie dans un store, un contexte ou un `useState` qui vivrait à côté.
+- `parseCatalogFilters()` et `buildCatalogUrl()` vivent dans `lib/catalog/params.ts` et sont utilisés par la page **et** par la route API : une seule définition des valeurs par défaut, du tri autorisé et de la taille de page.
+- Les données renvoyées par `getCatalog()` restent des props. On ne les copie jamais dans un state et on ne les resynchronise jamais avec un `useEffect`.
+- Les valeurs dérivées (`label` `TT-xxxx`, `observationsLabel`) sont produites côté serveur dans la réponse API. Le navigateur n'a aucun calcul à faire sur la liste.
+
+### Arborescence
+
+```text
+app/catalogue/page.tsx                    Server, async : await searchParams → parse → getCatalog
+app/catalogue/loading.tsx                 Server : squelette pendant la navigation
+app/catalogue/error.tsx                   Client : message d'erreur + bouton « réessayer »
+components/catalog/Sidebar.tsx            Server, statique (à remonter dans le layout partagé plus tard)
+components/catalog/CatalogHeader.tsx      Server : titre, sous-titre, « Importer catalogue existant »
+components/catalog/CatalogFiltersBar.tsx  Client : le seul composant interactif des filtres
+components/catalog/CatalogResults.tsx     Server : choix résultat / vide / erreur
+components/catalog/IndividualGrid.tsx     Server : grille 5 colonnes
+components/catalog/IndividualCard.tsx     Server : vignette + identifiant + `X observations`
+components/catalog/Pagination.tsx         Server : liens `<Link>` vers la page suivante
+lib/catalog/params.ts                     parse / build d'URL, partagé page ↔ API
+lib/catalog/get-catalog.ts                `import 'server-only'`, lecture PostgreSQL
+```
+
+Flux :
+
+```text
+?search=&sort=lastObservation&page=1
+  → page.tsx (await searchParams) → parseCatalogFilters → getCatalog(filters)
+  → CatalogResults (props sérialisables) → IndividualGrid → IndividualCard
+  → CatalogFiltersBar → router.replace(buildCatalogUrl(nextFilters))
+```
+
+### Réactivité sans duplication
+
+Mode par défaut : la page est un Server Component, la recherche part via un `<form method="get">` et le tri / la pagination via des `<Link>`. Zéro state client pour les filtres ; `loading.tsx` couvre l'attente. C'est le mode le plus simple à valider avec les équipes.
+
+Si une recherche instantanée est demandée ensuite, un seul Client Component (`CatalogFiltersBar`) gère l'interaction :
+
+- `<input>` **non contrôlé** (`defaultValue={filters.search}`) : le DOM porte la valeur saisie, il n'existe pas de second state React pour la même donnée ;
+- `onChange` → `startTransition(() => router.replace(buildCatalogUrl({ ...filters, search, page: 1 }), { scroll: false }))` : la frappe reste prioritaire, la navigation peut être interrompue ;
+- `useTransition().isPending` alimente `aria-busy` et un léger grisage, sans désactiver le champ ;
+- la remise à zéro de la page à `1` à chaque changement de recherche est faite au même endroit, pour éviter deux chemins qui écrivent l'URL ;
+- `useDeferredValue` n'est ajouté que si la grille passe un jour côté client et que son rendu devient lent ; il n'y a pas de timer de debounce à maintenir.
+
+Un retour navigateur est géré par le routeur : l'URL change, la page serveur est re-rendue avec les nouvelles props. On évite ainsi le classique « state miroir synchronisé par useEffect ».
+
+### Mémoïsation ciblée
+
+- Les cartes et la grille sont des composants serveur : `React.memo` n'a rien à y faire, elles ne se re-rendent pas côté client.
+- Si une carte devient interactive (client), l'envelopper dans `memo` avec des **props primitives** (`code`, `label`, `imageId`, `observationsLabel`). Pas d'objet littéral ni de callback inline en props, sinon `memo` ne compare plus rien d'utile.
+- `useMemo` uniquement pour un calcul réellement coûteux. Ici les 15 cartes sont déjà prêtes à l'arrivée : aucun `useMemo` obligatoire, et le compilateur React peut prendre le relais.
+- Clés React stables : le `code` de l'individu, jamais l'index du tableau.
+- Vignettes `<img loading="lazy" decoding="async" width height>` servies par `/api/catalog/photos/[imageId]`, sans optimisation `next/image` pour ne pas contourner l'allowlist serveur.
+
 ## Découpage en PR
 
 1. `docs/catalogue-contract` — ce plan, les décisions et le contrat d'API.
 2. `feat/catalog-api` — dépendance `pg`, module de lecture serveur, route `/api/catalog/individuals`, contrat typé, `DATABASE_URL` lu depuis l'add-on. Reproduction manuelle documentée : recherche, tri, pagination, cas vide.
 3. `feat/catalog-images` — résolveur de clé + route proxy allowlistée, 404 hors contrat, 503 si objet absent.
-4. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, états loading / empty / error.
+4. `feat/catalog-ui` — page `/catalogue` : Sidebar, Title row, Filtres, grille de 15 cartes, états loading / empty / error. Elle peut être découpée en trois PR si le diff grandit : (a) squelette serveur + grille à partir des props, (b) barre de filtres et navigation URL, (c) carte, vignette et pagination.
 5. `style/catalog-wireframe` — tokens du wireframe centralisés dans `globals.css`, suppressibles en retirant leur import du layout.
 6. `docs/catalog-env` — variables Clever Cloud, lien avec l'add-on PostgreSQL, rebuild.
 7. `feat/catalog-auth` (si nécessaire) — Basic Auth côté serveur, même comportement que la démo Gradio.

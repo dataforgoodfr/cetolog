@@ -84,6 +84,7 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
+      - run: npm test
       - run: npm run build
 
   # Application Node cetolog-web, qui construit frontend/ (CC_APP_FOLDER) : voir docs/frontend_ci

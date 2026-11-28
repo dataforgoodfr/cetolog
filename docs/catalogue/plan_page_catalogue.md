@@ -158,42 +158,6 @@ Typage des frontières :
 - route image : `context: { params: Promise<{ imageId: string }> }` (les `params` sont une Promise dans Next 16), `Promise<Response>` en retour ;
 - `tsconfig.json` reste en `strict: true`, sans `any` dans le code de l'écran ; les seules conversions se font après validation explicite aux frontières (URL, JSON, lignes SQL).
 
-## Recommandations pour l'API définitive (plus tard)
-
-Relevé en lecture seule sur `cetolog-db-dev` : `pg_trgm`, `unaccent`, `citext` et `vector` sont déjà installés ; les seuls index sont `individuals(id)`, `individuals(code)` et `photos(id)`. Il n'y a **aucun index** sur `photos.individual_id`, `side`, `date`, `sha256` ou `delivery`, toutes les colonnes textuelles sont nullable, et 6 groupes de `sha256` dupliqués représentent 6 lignes redondantes. La requête d'écran actuelle fait un `DISTINCT ON` + comptage + `ILIKE` sans index : correct à 1 529 individus, fragile ensuite.
-
-### 1. Séparer écriture et lecture (CQRS-lite)
-
-- **Écriture** : l'ingestion Python (Alembic + script de chargement) reste l'unique propriétaire des tables sources.
-- **Lecture** : une vue `catalog_cards` expose une ligne par individu avec `individual_id`, `code`, `reference_photo_id`, `last_observation_date`, `photo_count` et `search_text`. Le gateway ne requête que cette vue.
-- Commencer par une **vue simple** ; passer en `MATERIALIZED VIEW` avec index uniquement si la latence devient un problème. Le contrat d'API ne change pas dans l'un ou l'autre cas.
-- Index utiles côté-source : `(individual_id, date desc)` pour le `DISTINCT ON`, `(last_observation_date desc, code)` pour le tri, `gin (search_text gin_trgm_ops)` pour la recherche.
-
-### 2. Compléter le modèle dans une migration Alembic dédiée
-
-- `deliveries(id, label, imported_at, manifest_key, is_active)` et `photos.delivery_id` : la livraison devient une entité, plus une simple chaîne libre.
-- `sites(id, code, label)` et `photos.site_id` : permet de filtrer par site sans comparer des textes.
-- `observations(id, individual_id, date, site_id)` et `photos.observation_id` : le compteur d'observations deviendra un vrai `count(*)` le jour où Miraceti valide la règle. Le placeholder `X observations` reste jusqu'à cette migration.
-- `photos` : ajouter `storage_key` (unique, non nul), `content_type`, `width`, `height`, `is_reference`, index partiel `unique (individual_id) where is_reference` et index sur `sha256`. La règle droite puis gauche est appliquée **à l'ingestion**, pas à chaque requête d'affichage.
-- `individuals` : ajouter `display_name` (nullable) et `search_text` entretenu par trigger (`lower(unaccent(code || ' ' || display_name))`). `unaccent` n'étant pas immutable, on évite la colonne générée et l'index d'expression direct.
-- `ingest_errors` : y placer les 7 noms non reconnus (`TTGC2050`, `TUTR05558`, `TUTR1260-fa`…) au lieu de laisser `individual_id` à `NULL`. Une fois la table nettoyée, `photos.individual_id` peut devenir `NOT NULL`.
-
-Aucune modification de la migration déjà fusionnée `0879077b4f35` ; une seule personne applique les migrations ; `spatial_ref_sys` reste intact.
-
-### 3. Recherche en deux niveaux
-
-- **Niveau 1, suffisant pour le catalogue** : préfixe du code + trigramme sur `search_text` avec `pg_trgm` (`search_text % :q` ou `ILIKE '%:q%'`), insensible aux accents grâce à `unaccent`. Le placeholder `Identifiant, nom...` suppose d'ajouter `display_name` avant de promettre la recherche par nom.
-- **Niveau 2, plus tard seulement** : `tsvector` entretenu par trigger pour la recherche plein texte (config `french`) et, si le besoin se confirme, `pgvector` pour une similarité sémantique. La extension `vector` est déjà là, mais elle ne doit pas servir à filtrer le catalogue.
-- Garder un tri déterministe `last_observation_date desc nulls last, code asc` pour que la pagination ne saute pas de carte.
-
-### 4. Contrat d'API stable
-
-- Versionner les routes : `/api/v1/catalog/individuals`, `/api/v1/catalog/individuals/[code]` (fiche individu du frame 6), `/api/v1/catalog/photos/[id]`, puis `/observations` et `/filters/sites` quand les tables existent.
-- Conserver l'enveloppe `{ items, total, page, pageSize, totalPages }` et les types `src/types/catalog.ts` comme source de vérité tant que l'API est Next. Le jour de FastAPI, générer les types TypeScript depuis le schéma OpenAPI (`openapi-typescript`) et garder `CatalogGateway` inchangé : aucun composant ne doit bouger.
-- Erreurs typées `CatalogErrorBody` (400 query invalide, 404 inconnu, 503 source indisponible), `ETag` sur les listes, `Cache-Control: private, no-store` sur les images.
-- Rôle PostgreSQL **lecture seule** pour l'API ; aucune écriture depuis le frontend ; pool dimensionné pour l'offre DEV à 5 connexions.
-- Si les pages deviennent profondes, remplacer `OFFSET` par une pagination par curseur sur `(last_observation_date, code)` sans changer le contrat d'affichage.
-
 ## Découpage en composants et réactivité
 
 ### Source de vérité unique

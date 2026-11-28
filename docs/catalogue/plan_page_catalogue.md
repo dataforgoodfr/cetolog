@@ -8,13 +8,13 @@ Construire l'écran catalogue du frontend à partir du frame Figma « 5 · Catal
 
 Frame `5 · Catalogue des individus`, 1280 × 860, dans la section « Catalogue, historique et qualité », juste avant `6 · Fiche individu`.
 
-| Zone                                                                                  | Contenu lu sur le frame                                                                                                                                                   |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sidebar (240 × 860, fond blanc, bordure droite 2 px `#222222`, padding 24/16, gap 24) | Logo `Cetolog` ; CTA `+ Lancer un matching` ; navigation `Observations`, `Catalogue`, `Historique`, `Qualité`                                                             |
-| Title row                                                                             | Titre `Catalogue des individus` ; sous-titre `Tous les individus connus, avec leur photo de référence.` ; `Importer catalogue existant`                                   |
-| Filtres                                                                               | `Rechercher` avec placeholder `Identifiant, nom...` ; `Trier par` → `Dernière observation` ; `+ Nouvel individu`                                                          |
-| Container                                                                             | Grille de 5 colonnes × 3 lignes visibles (15 cartes). Chaque carte : emplacement photo `Aileron`, identifiant (`TT-0008`, `TT-0012`, `TT-0042`…), texte `12 observations` |
-| Actions                                                                               | Pagination du catalogue (groupe identifié comme tel par le porteur du frame)                                                                                              |
+| Zone                                                                                  | Contenu lu sur le frame                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sidebar (240 × 860, fond blanc, bordure droite 2 px `#222222`, padding 24/16, gap 24) | Logo `Cetolog` ; CTA `+ Lancer un matching` ; navigation `Observations`, `Catalogue`, `Historique`, `Qualité`                                                                             |
+| Title row                                                                             | Titre `Catalogue des individus` ; sous-titre `Tous les individus connus, avec leur photo de référence.` ; `Importer catalogue existant`                                                   |
+| Filtres                                                                               | `Rechercher` avec placeholder `Identifiant, nom...` ; `Trier par` → `Dernière observation` ; `+ Nouvel individu`                                                                          |
+| Container                                                                             | Grille de 5 colonnes × 3 lignes visibles (15 cartes). Chaque carte : emplacement photo `Aileron`, identifiant (`TT-0008`, `TT-0012`, `TT-0042`… sur la maquette), texte `12 observations` |
+| Actions                                                                               | Pagination du catalogue (groupe identifié comme tel par le porteur du frame)                                                                                                              |
 
 Le texte `12 observations` est identique sur toutes les cartes : c'est un placeholder. Le groupe `Actions` est la pagination : elle est donc incluse dès la première version, avec 15 cartes par page.
 
@@ -29,7 +29,7 @@ La base contient `individuals` (`id`, `code`) et `photos` (`id`, `delivery`, `or
 - tous les `side` sont `D` ou `G` (1 205 / 1 252) ;
 - 293 dates et 692 sites vides.
 
-Les identifiants du Figma (`TT-0008`) ne sont pas ceux de la base (`TUTR0008`). Hypothèse de travail : afficher `TT-0008` dérivé de `TUTR0008`, à confirmer avec l'association.
+Les identifiants `TT-0008` de la maquette ne sont pas ceux de la base (`TUTR0008`). On affiche le `code` de la base **tel quel** : aucune transformation vers `TT-xxxx`, décision confirmée. Le wireframe reste une référence de mise en page, pas de nommage.
 
 Les clés du bucket sont de la forme `curated/catalogue/photos/<livraison>/<code>/<nom-fichier>`. Deux écarts sont à résoudre avant de servir les images :
 
@@ -43,6 +43,7 @@ Un résolveur de clé explicite est donc nécessaire ; il sera documenté dans l
 | Sujet                 | Décision                                                                        |
 | --------------------- | ------------------------------------------------------------------------------- |
 | API                   | Route handler Next.js pour valider vite ; FastAPI plus tard si le contrat tient |
+| Identifiant affiché   | `code` de la base tel quel (`TUTR0008`), pas de `TT-xxxx` dérivé                |
 | Photo de référence    | Côté droit par défaut, sinon gauche                                             |
 | Nombre d'observations | Texte placeholder `X observations`, aucun comptage pour l'instant               |
 | Taille de page        | 15 cartes, pour coller au frame                                                 |
@@ -57,14 +58,18 @@ Un résolveur de clé explicite est donc nécessaire ; il sera documenté dans l
   "items": [
     {
       "code": "TUTR0008",
-      "label": "TT-0008",
-      "photo": { "imageId": "<id opaquement dérivé de la clé>" },
+      "photo": {
+        "id": "<identifiant opaque>",
+        "url": "/api/catalog/photos/<identifiant opaque>",
+        "alt": "Photo de TUTR0008"
+      },
       "observationsLabel": "X observations"
     }
   ],
   "total": 1529,
   "page": 1,
-  "pageSize": 15
+  "pageSize": 15,
+  "totalPages": 102
 }
 ```
 
@@ -111,7 +116,6 @@ export type CatalogPhoto = { id: string; url: string; alt: string };
 
 export type CatalogIndividual = {
   code: string;
-  label: string;
   photo: CatalogPhoto;
   observationsLabel: string;
 };
@@ -161,7 +165,7 @@ Typage des frontières :
 - L'URL est la seule source de vérité pour `search`, `sort` et `page` : pas de copie dans un store, un contexte ou un `useState` qui vivrait à côté.
 - `parseCatalogQuery()` et `buildCatalogUrl()` vivent dans `src/lib/catalog/params.ts` et sont utilisés par la page **et** par la route API : une seule définition des valeurs par défaut, du tri autorisé et de la taille de page.
 - Les données renvoyées par `gateway.list()` restent des props. On ne les copie jamais dans un state et on ne les resynchronise jamais avec un `useEffect`.
-- Les valeurs dérivées (`label` `TT-xxxx`, `observationsLabel`) sont produites côté serveur par le gateway. Le navigateur n'a aucun calcul à faire sur la liste.
+- Les valeurs dérivées (dont `observationsLabel`) sont produites côté serveur par le gateway. Le navigateur n'a aucun calcul à faire sur la liste.
 
 ### Arborescence
 
@@ -228,10 +232,10 @@ Un retour navigateur est géré par le routeur : l'URL change, la page serveur e
 ### Mémoïsation ciblée
 
 - Les cartes et la grille sont des composants serveur : `React.memo` n'a rien à y faire, elles ne se re-rendent pas côté client.
-- Si une carte devient interactive (client), l'envelopper dans `memo` avec des **props primitives** (`code`, `label`, `imageId`, `observationsLabel`). Pas d'objet littéral ni de callback inline en props, sinon `memo` ne compare plus rien d'utile.
+- Si une carte devient interactive (client), l'envelopper dans `memo` avec des **props primitives** (`code`, `photoUrl`, `photoAlt`, `observationsLabel`). Pas d'objet `photo` ni de callback inline en props, sinon `memo` ne compare plus rien d'utile.
 - `useMemo` uniquement pour un calcul réellement coûteux. Ici les 15 cartes sont déjà prêtes à l'arrivée : aucun `useMemo` obligatoire, et le compilateur React peut prendre le relais.
 - Clés React stables : le `code` de l'individu, jamais l'index du tableau.
-- Vignettes `<img loading="lazy" decoding="async" width height>` servies par `/api/catalog/photos/[imageId]`, sans optimisation `next/image` pour ne pas contourner l'allowlist serveur.
+- Vignettes `<img loading="lazy" decoding="async" width height>` servies par l'URL opaque du gateway (aujourd'hui `/api/catalog/photos/[imageId]`), sans optimisation `next/image` pour ne pas contourner l'allowlist serveur.
 
 ## Découpage en PR
 

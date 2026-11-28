@@ -48,7 +48,7 @@ const COUNT_SQL = `
 
 let pool: Pool | undefined;
 
-function getPool(): Pool {
+export function getCatalogPool(): Pool {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL est requise pour lire le catalogue");
   }
@@ -75,7 +75,7 @@ function toIndividual(row: IndividualRow): CatalogIndividual {
 
 export const postgresGateway: CatalogGateway = {
   async list(query: CatalogQuery): Promise<CatalogPage> {
-    const client = await getPool().connect();
+    const client = await getCatalogPool().connect();
     try {
       const offset = (query.page - 1) * query.pageSize;
       const [rows, totals] = await Promise.all([

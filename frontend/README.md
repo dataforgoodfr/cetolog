@@ -28,9 +28,26 @@ npm run dev           # Serveur de développement (http://localhost:3000)
 npm run build         # Build de production
 npm run start         # Serveur de production (après build), écoute sur 0.0.0.0:$PORT
 npm run lint          # Vérification ESLint
+npm test              # Tests de composants (Vitest + Testing Library)
+npm run test:watch    # Tests en mode watch
 npm run format        # Formater les fichiers avec Prettier
 npm run format:check  # Vérifier le formatage sans modifier les fichiers
 ```
+
+## Variables du catalogue
+
+Toutes les variables sont **serveur uniquement** : aucune ne porte le préfixe `NEXT_PUBLIC_*`, et aucune n'est passée en prop à un Client Component.
+
+| Variable                | Usage                                   |
+| ----------------------- | --------------------------------------- |
+| `DATABASE_URL`          | Lecture seule du catalogue via `pg`     |
+| `S3_ENDPOINT_URL`       | Point d'accès du stockage des vignettes |
+| `S3_REGION`             | Région du stockage                      |
+| `S3_BUCKET`             | Bucket des vignettes                    |
+| `AWS_ACCESS_KEY_ID`     | Identifiants de lecture du stockage     |
+| `AWS_SECRET_ACCESS_KEY` | Identifiants de lecture du stockage     |
+
+En local, `.env.local` est un lien symbolique vers le `.env` racine, déjà ignoré par Git. Aucune valeur n'est versionnée : sur Clever Cloud, les variables se posent avec `clever env set NOM valeur`, en dehors du repo.
 
 ## Déploiement sur Clever Cloud
 
@@ -93,6 +110,19 @@ Suivre les logs de déploiement :
 ```bash
 clever logs
 ```
+
+### Staging
+
+Le catalogue est déployé sur une application dédiée, **jamais sur `cetolog-web`** (production). Créer `cetolog-web-staging`, lier le même add-on PostgreSQL en lecture, poser les variables ci-dessus, puis déployer la branche d'intégration :
+
+```bash
+clever create cetolog-web-staging --type node --org <org> --region par
+clever link cetolog-web-staging
+clever service link-addon <addon-postgresql>
+clever deploy
+```
+
+Vérifications après déploiement : `GET /api/catalog/individuals`, une vignette en `200 image/jpeg`, la page `/catalogue` en 200, puis un aller-retour recherche → pagination → retour navigateur sans perte des filtres.
 
 ## Remarques
 

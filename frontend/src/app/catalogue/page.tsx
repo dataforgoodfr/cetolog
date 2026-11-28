@@ -1,9 +1,10 @@
 import { CatalogFiltersBar } from "@/components/catalog/CatalogFiltersBar";
 import { CatalogHeader } from "@/components/catalog/CatalogHeader";
 import { CatalogResults } from "@/components/catalog/CatalogResults";
+import { Pagination } from "@/components/catalog/Pagination";
 import { Sidebar } from "@/components/catalog/Sidebar";
 import { catalogGateway } from "@/lib/catalog";
-import { parseCatalogQuery } from "@/lib/catalog/params";
+import { buildCatalogUrl, parseCatalogQuery } from "@/lib/catalog/params";
 
 export type CatalogPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -22,6 +23,13 @@ export default async function CataloguePage({
         <CatalogHeader />
         <CatalogFiltersBar filters={query} />
         <CatalogResults items={catalogPage.items} />
+        <Pagination
+          page={catalogPage.page}
+          pageSize={catalogPage.pageSize}
+          total={catalogPage.total}
+          totalPages={catalogPage.totalPages}
+          buildHref={(page) => buildCatalogUrl({ ...query, page })}
+        />
       </div>
     </main>
   );
